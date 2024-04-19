@@ -1,0 +1,24 @@
+# Fdb version 4
+["latex"] 1712917573.0031 "thesis.tex" "thesis.dvi" "thesis" 1712917573.32275 2
+  "/usr/share/texmf-dist/fonts/map/fontname/texfonts.map" 1711186958 3524 cb3e574dea2d1052e39280babc910dc8 ""
+  "/usr/share/texmf-dist/fonts/tfm/public/cm/cmr12.tfm" 1711186958 1288 655e228510b4c2a1abe905c368440826 ""
+  "/usr/share/texmf-dist/tex/generic/iftex/ifluatex.sty" 1711186958 492 1994775aa15b0d1289725a0b1bbc2d4c ""
+  "/usr/share/texmf-dist/tex/generic/iftex/ifpdf.sty" 1711186958 480 5778104efadad304ced77548ca2184b1 ""
+  "/usr/share/texmf-dist/tex/generic/iftex/iftex.sty" 1711186958 7237 bdd120a32c8fdb4b433cf9ca2e7cd98a ""
+  "/usr/share/texmf-dist/tex/generic/iftex/ifxetex.sty" 1711186958 488 4565444a3e75e59cb2702dc42e18f482 ""
+  "/usr/share/texmf-dist/tex/latex/base/report.cls" 1711186958 23203 f5d913095ece2233436f0e628619cd37 ""
+  "/usr/share/texmf-dist/tex/latex/base/size12.clo" 1711186958 8449 f07039d8e4e89f21078d9b5137579bfc ""
+  "/usr/share/texmf-dist/tex/latex/everyshi/everyshi.sty" 1711186958 2368 ef01f98551a0f54407358b67f8a6c5e1 ""
+  "/usr/share/texmf-dist/tex/latex/pdfx/pdfx.sty" 1711186958 109591 fbc1db3d28e53e6589d1cf9c8bf1eb1d ""
+  "/usr/share/texmf-dist/web2c/texmf.cnf" 1711186958 41588 b43d3e860a4f94167ee1e725ff526a72 ""
+  "/var/lib/texmf/web2c/pdftex/latex.fmt" 1711443567 7112979 aed9fdcd204b03fa82ca7dd2ec20689a ""
+  "metadata.tex" 1712917544.4061 3666 e9d9e6248f01f79654cfedf33bf91ff4 ""
+  "thesis.aux" 1712917572.99943 32 3985256e7290058c681f74d7a3565a19 "latex"
+  "thesis.tex" 1712917544.4061 6208 f372805d46141415472c07860166d67d ""
+  "xmp.tex" 1712917544.4061 1031 9052166811eedcd13bd9abdcd6b4c155 ""
+  (generated)
+  "thesis.aux"
+  "thesis.dvi"
+  "thesis.log"
+  "thesis.xmpdata"
+  (rewritten before read)
