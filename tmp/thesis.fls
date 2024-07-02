@@ -259,6 +259,8 @@ OUTPUT tmp/golem.aux
 INPUT ./golem.tex
 OUTPUT tmp/analysis.aux
 INPUT ./analysis.tex
+INPUT /home/sorx/.texlive/texmf-var/luatex-cache/generic/fonts/otl/lmroman10-regular.luc
+INPUT /home/sorx/.texlive/texmf-var/luatex-cache/generic/fonts/otl/lmroman10-bold.luc
 OUTPUT tmp/implementation.aux
 INPUT ./implementation.tex
 OUTPUT tmp/experiments.aux
@@ -267,6 +269,9 @@ OUTPUT tmp/conclusion.aux
 INPUT ./conclusion.tex
 OUTPUT tmp/bibliography.aux
 INPUT ./bibliography.tex
+INPUT /home/sorx/.texlive/texmf-var/luatex-cache/generic/fonts/otl/lmromancaps10-regular.luc
+INPUT /home/sorx/.texlive/texmf-var/luatex-cache/generic/fonts/otl/lmroman12-italic.luc
+INPUT /home/sorx/.texlive/texmf-var/luatex-cache/generic/fonts/otl/lmmono12-regular.luc
 INPUT ./tmp/thesis.lof
 OUTPUT tmp/thesis.lof
 INPUT ./tmp/thesis.lot
@@ -284,5 +289,11 @@ INPUT ./tmp/bibliography.aux
 INPUT ./tmp/thesis.out
 INPUT ./tmp/thesis.run.xml
 OUTPUT tmp/thesis.run.xml
+INPUT /usr/share/texmf-dist/fonts/type1/public/lm/lmex10.pfb
 INPUT /usr/share/texmf-dist/fonts/type1/public/lm/lmmi12.pfb
+INPUT /usr/share/texmf-dist/fonts/type1/public/lm/lmmi8.pfb
+INPUT /usr/share/texmf-dist/fonts/type1/public/lm/lmr12.pfb
 INPUT /usr/share/texmf-dist/fonts/type1/public/lm/lmr8.pfb
+INPUT /usr/share/texmf-dist/fonts/type1/public/lm/lmsy10.pfb
+INPUT /usr/share/texmf-dist/fonts/type1/public/lm/lmsy8.pfb
+INPUT /usr/share/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb

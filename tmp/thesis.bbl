@@ -16,5 +16,43 @@
   {}
 \endgroup
 
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global}
+    \entry{7886665}{inproceedings}{}
+      \name{author}{2}{}{%
+        {{hash=3712e5b18594a81449956230f1ca0a13}{%
+           family={Jovanović},
+           familyi={J\bibinitperiod},
+           given={Dejan},
+           giveni={D\bibinitperiod}}}%
+        {{hash=0908582acb17105e7b66314c508d1376}{%
+           family={Dutertre},
+           familyi={D\bibinitperiod},
+           given={Bruno},
+           giveni={B\bibinitperiod}}}%
+      }
+      \strng{namehash}{fdca7f078bd4bff51913ff7579f01723}
+      \strng{fullhash}{fdca7f078bd4bff51913ff7579f01723}
+      \strng{bibnamehash}{fdca7f078bd4bff51913ff7579f01723}
+      \strng{authorbibnamehash}{fdca7f078bd4bff51913ff7579f01723}
+      \strng{authornamehash}{fdca7f078bd4bff51913ff7579f01723}
+      \strng{authorfullhash}{fdca7f078bd4bff51913ff7579f01723}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{2016 Formal Methods in Computer-Aided Design (FMCAD)}
+      \field{title}{Property-directed k-induction}
+      \field{year}{2016}
+      \field{pages}{85\bibrangedash 92}
+      \range{pages}{8}
+      \verb{doi}
+      \verb 10.1109/FMCAD.2016.7886665
+      \endverb
+      \keyw{Interpolation;Cognition;Writing;Software;Concrete;Algorithm design and analysis;Adaptation models}
+    \endentry
+  \enddatalist
+\endrefsection
 \endinput
 
