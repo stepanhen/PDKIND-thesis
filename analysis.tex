@@ -1,18 +1,266 @@
 \chapter{PDKind}
 
-Describe the individual procedures of the algorithm and in each part analyze how the implementation went. If there were more ways to do it, compare them.
-The last section should describe how we also added validity witnesses because Golem and other engines in it produce them).
+% Describe the individual procedures of the algorithm and in each part analyze how the implementation went. If there were more ways to do it, compare them.
+% The last section should describe how we also added validity witnesses because Golem and other engines in it produce them).
 
 \section{Induction vs k-Induction}
 
+\noindent This algorithm is a combination of IC3 and k-induction.
+IC3 is a commonly used method that uses induction to show a property is invariant by incrementally constructing an inductive strengthening of the property. PDKIND breaks IC3 into modules and that allows replacing the induction method with k-induction.
+
+
+\vspace{\baselineskip}\noindent \textbf{Definition (Induction):} Proves a property \( P \) is invariant by showing:
+\begin{itemize}
+    \item \textbf{Base Case (init)}: \( P \) holds in the initial state.
+    \item \textbf{Inductive Step (cons)}: If \( P \) holds in a state, it holds in the next state.
+\end{itemize}
+
+
+\vspace{\baselineskip}\noindent \textbf{Definition (k-Induction):} Extends traditional induction to consider sequences of \( k \) states. Proves a property \( P \) is invariant by showing:
+\begin{itemize}
+    \item \textbf{Base Case (k-init)}: \( P \) holds in the first \( k \) states.
+    \item \textbf{Inductive Step (k-cons)}: If \( P \) holds in a sequence of \( k \) states, it holds in the next state.
+\end{itemize}
+
+This method is more powerful for properties that are not inductive but can be shown to hold over multiple steps.
+More precise definitions are shown in \cite{7886665}.
+
+\subsection*{Relative Power}
+\noindent    \textbf{With Quantifier Elimination}:
+        Induction and k-induction have the same deductive power. K-Induction might provide more concise proofs.
+
+\noindent    \textbf{Without Quantifier Elimination}:
+        K-Induction can be exponentially more concise than induction. Stronger in certain logical theories like pure Boolean logic or linear arithmetic.
+
+\subsection*{Practical Effectiveness}
+\noindent \cite{7886665} shows that k-Induction is effective, especially when combined with algorithms like IC3.
+Here we show its effectiveness on a simple example.
+
+\vspace{\baselineskip}\noindent Consider a transition system with an array \( a \) and the following properties:
+
+
+\vspace{\baselineskip}\noindent \textbf{Invariant Property \( P \)}: \( a[0] = 0 \)
+
+\noindent \textbf{Initial State}:
+
+\( i \gets 0 \)
+
+\( j \gets 0 \)
+
+\( a[0] \gets 0 \)
+
+\newpage
+\vspace{\baselineskip}\noindent \textbf{Transition}:
+
+Randomly select \( j \)
+
+Increment \( i \)
+
+\( a[i] \gets a[j] \)
+
+\vspace{\baselineskip}Induction cannot prove \( P \) as invariant because \( P \) is not inductive in a single step. K-Induction, however, can be used to prove \( P \) as \( (N+1) \)-inductive, where \( N \) is the length of the array.
+
+\vspace{\baselineskip}\noindent \textbf{Base Case (k-init)}: \( P \) holds in the first \( k \) states.
+
+\noindent \textbf{Inductive Step (k-cons)}: If \( P \) holds in a sequence of \( k \) states, it holds in the next state.
+
+\vspace{\baselineskip}This shows that \( k \)-induction can handle properties where simple induction fails, especially in systems with complex state transitions.
+
 \section{Rechability checking procedure}
 
-\section{PD-Kind procedure}
+\noindent To understand the following, we need to introduce a few definitions.
+Let us have a formula in the form 
+\begin{equation}
+    A(\vec{x}) \wedge T[B]^k(\vec{x},\vec{y},\vec{w}) \wedge C(\vec{y})
+\end{equation}
+Where for \( k > 1 \), \( T[F]^k(\vec{x}, \vec{x}') \) is defined as
+\begin{equation*}
+    T(\vec{x}, \vec{w}_1) \land \bigwedge_{i=1}^{k-1} \left( F(\vec{w}_i) \land T(\vec{w}_i, \vec{w}_{i+1}) \right) \land T(\vec{w}_{k-1}, \vec{x}')
+\end{equation*}
+where $\vec{w}$ are state variables in the intermediate states.
+
+
+\vspace{\baselineskip}\noindent    \textbf{Definition (Interpolant):} If formula (4.1) is unsatisfiable, then $I(\vec{y})$ is an interpolant if
+    \begin{enumerate}
+       \item \( A(\vec{x}) \land T[B]^k(\vec{x}, \vec{w}, \vec{y}) \Rightarrow I(\vec{y}) \), and
+       \item \( I(\vec{y}) \) and \( C(\vec{y}) \) are inconsistent.
+\end{enumerate}
+
+\noindent    \textbf{Definition (Generalization):} If formula (4.1) is satisfiable, then $G(\vec{x})$ is a generalization if
+    \begin{enumerate}
+        \item $G(\vec{x}) \Rightarrow \exists \vec{y}, \vec{w}$  $T[B]^k(\vec{x}, \vec{y}, \vec{w}) \wedge C(\vec{y})$, and
+        \item $G(\vec{x})$ and $A(\vec{x})$ are consistent.
+\end{enumerate}
+
+\newpage
+
+\begin{algorithm}
+\caption{Reachable}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Target state $F$, maximum steps $k$
+\State \textbf{Data:} Reachability frame $R$, initial states $I$, transition states $T$
+\State \textbf{Output:} True if $F$ is reachable in $k$ steps, False otherwise
+
+\If{$k = 0$} 
+    \State \Return{CheckSAT($I \wedge T^0 \wedge F$)}
+\EndIf
+
+\While{true}
+    \If{CheckSAT($R_{k-1} \wedge T \wedge F$)}
+        \State $G \gets$ Generalize($R_{k-1}, T, F$)
+        \If{Reachable($G, k-1$)}
+            \State \Return{true}
+        \Else
+            \State $E \gets$ Explain($G, k-1$)
+            \State $R_{k-1} \gets R_{k-1} \cup E$
+        \EndIf
+    \Else
+        \State \Return{false}
+    \EndIf
+\EndWhile
+
+\end{algorithmic}
+\end{algorithm}
+
+\noindent Method shown in Algorithm 1 tries to reach the initial states backwards by using a depth-first search strategy.
+
+To check if \( F \) is reachable from the initial states in \( k \) steps, we first check whether \( F \) is reachable in one transition from the previous frame \( R_{k-1} \). If there is no such transition, then \( F \) is not reachable in \( k \) steps. Otherwise, we get a state that satisfies \( R_{k-1} \) and from which \( F \) is reachable in one step. We then call a generalization procedure, which gives us a formula \( G \), a generalization of the state mentioned above. Then, using a DFS strategy, we recursively check whether \( G \) is reachable from the initial states. If \( G \) is reachable, then \( F \) is also reachable, and the procedure ends. Otherwise, we can learn an explanation and eliminate \( G \) by adding the explanation into the frame \( R_{k-1} \).
+
+In our implementation, we needed to figure out the following: \textbf{Satisfiability checking}, \textbf{Generalization}, \textbf{Explanation} and \textbf{R frame representation}.
+
+\section*{Satisfiability Checking}
+\noindent We could use various SMT solvers for satisfiability checking, but Golem already has a wrapper around the OpenSMT solver and uses it in every other engine. Therefore we will use it too for every other satisfiability check, that we will need.
+
+\newpage
+\section*{Generalization}
+\begin{algorithm}
+\caption{Generalize}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Model $M$, transition formula $T$, state formula $F$
+\State \textbf{Output:} Generalized formula $G$
+
+    \State $StateVars \gets$ GetStateVars()
+    \State $G \gets$ KeepOnly(StateVars, $T \wedge F$, $M$)
+    \State \Return $G$
+
+\end{algorithmic}
+\end{algorithm}
+\noindent Golem doesn't provide us with the generalization method. Still, it has needed components to create our method, shown in pseudocode Algorithm 2. It eliminates all variables except the state ones, represented as $\vec{x}$ from the formula \( T[B]^k(\vec{x}, \vec{w}, \vec{y}) \wedge C(\vec{y}) \) to satisfy the generalization definition.
+
+\section*{Explanation}
+\noindent Instead of the Explain method, we will use another feature of the OpenSMT solver and that is interpolation. To get the interpolant, we tell the solver to give us an interpolation of the first two formulas inserted in it, i.e. for CheckSat($A \wedge B \wedge C$) we want interpolation of $A \wedge B$. 
+
+
+On line 13 in Algorithm 1, we need an interpolant from the CheckSAT that happened in the previous Reachable() call. Therefore, we need to modify our Reachable() method on line 17 to also return an interpolant along with the false result. Later, we will see that in our implementation each SATCheck has its solver instance. To get the interpolant, we just ask the solver to return it if the SATCheck fails.
+
+\section*{R Frame representation}
+\noindent For the R Frame representation, we had several choices. The simplest one was to create a list $R$ of formulas (where $R_i := R[i]$) each time we call Reachable() from outside. This approach is simple, yet not efficient since we would be losing the whole R Frame we built in each call, instead of reusing it in another call. 
+
+Therefore we will create a better approach and that is a Reachability class, where each instance of this class will have such list, but calling Reachable() on that instance would only grow the R Frame and wouldn't delete it.
 
 \section{Push procedure}
 
+\noindent \textbf{Definition (Induction Frame):} A set of tuples $F \subset \mathbb{F} \times \mathbb{F}$, where $\mathbb{F}$ is a set of all state formulas in theory $T$, is an induction frame at index $n$ if $(P, \neg P) \in F$ and $\forall (lemma, counterExample) \in F$:
+\begin{itemize}
+    \item $lemma$ is valid up to $n$ steps and refutes $counterExample$
+    \item $counterExample$ states can be extended to a counterexample to $P$.
+\end{itemize}
 
 
+\begin{algorithm}
+\caption{Push}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Induction frame $F$, $n$, $k$
+\State \textbf{Output:} Old induction frame $F$, new induction frame $G$, $n_p$, $isInvalid$ 
 
+\State push elements of $F$ to queue $Q$
+    \State $G \gets$ \{\}
+    \State $n_p \gets n + k$
+    \State $invalid \gets false$
+    \While {$\neg invalid$ and $Q$ is not empty}
+        \State $(lemma, counterExample)  \gets$ $Q$.pop()
+        \State $F_{ABS} \gets \bigwedge a_i$ ,where ($a_i$, $b_i$) \in $F$ \forall $i$ \in \{1,...,$F$.length()\}
+        \State $T_k \gets T[F_{ABS}]^k$ by definition
+        \State $(s_1, m_1) \gets$ CheckSAT($F_{ABS}, T_k, \neg lemma$) // $m_1$ is model if is SAT
+        \If{$\neg s_1$}
+            \State $G \gets G \cup (lemma, counterExample)$
+            \State Continue
+        \EndIf
+        \State $(s_2, m_2) \gets$ CheckSAT($F_{ABS} \wedge T_k \wedge counterExample$)
+        \If{$s_2$}
+            \State $ g_2 \gets $ Generalize($m_2, T_k, counterExample$)
+            \State $(r_1, i_1, n_1) \gets $ Reachable($n-k+1$, $n$, $g_2$) // $i_1$ is interpolant
+            \If{$r_1$}
+                \State $ isInvalid \gets true $
+                \State Continue
+            \Else
+                \State $g_3 \gets i_1$
+                \State $F \gets F \cup (g_3, g_2)$
+                \State $Q$.push($(g_3, g_2)$)
+                \State $Q$.push($lemma, counterExample$)
+                \State Continue
+            \EndIf
+        \EndIf
+        \State $g_1 \gets$ Generalize($m_1$, $T_k$, $\neg lemma$)
+        \State $(r_2, i_2, n_2) \gets $ Reachable($n-k+1$, $n$, $g_1$)
+        \If{$r_2$}
+            \State $(r_3, i_3, n_3) \gets $ Reachable($n+1$, $n_2 + k$, $g_1$)
+            \State $n_p \gets $ Min($n_p$, $n_3$)
+            \State $F \gets$ $F$ $\cup $ ($\neg counterExample$, $counterExample$)
+            \State $G \gets$ $G$ $\cup $ ($\neg counterExample$, $counterExample$)
+        \Else
+            \State $g_3 \gets$ $i_2 \wedge lemma$
+            \State $F \gets$ $F$ $\cup $ ($g_3$, $counterExample$)
+            \State $F \gets$ $F$ $\setminus $ ($lemma$, $counterExample$)
+            \State $Q$.push(($g_3$, $counterExample$))
+        \EndIf
+        \State \Return ($F$, $G$, $n_p$, $isInvalid$)
+    \EndWhile
+        
+\end{algorithmic}
+\end{algorithm}
+
+\noindent This procedure shown in Algorithm 3 is the core of PDKIND algorithm, We will break it down into smaller pieces to understand how it works.
+
+The first part starts on line 11 where we need to check if lemma is k-inductive. We can also notice that the SAT check returns model $m_1$. In our implementation, SAT checking doesn't return model, but we can solve this by initializing a new solver instance for each SAT check. If the check is true, we can ask the solver for a model that satisfies the inserted formula.
+If the check isn't successful, we can push a new obligation to our new induction frame $G$ and continue. Else we get the model $m_1$ and save it for later.
+
+In the second part, on line 16, we check if $counterExample$ is reachable. If it is, we get model $m_2$ and generalize it to $g_2$. We know that from $g_2$, we can reach $\neg P$, so we need to check if $g_2$ is reachable from initial states. If it is reachable, the property is invalid, and we mark $isInvalid \gets true$.
+
+On line 19, we can see that Reachable() accepts more arguments and returns more values than shown in Algorithm 1. This new Reachable($i$,$j$,$F$) method checks if $F$ is reachable in k steps where $i\leq k \leq j$. To achieve this behavior in our implementation, we create a wrapper function that calls Reachable($k$, $F$) in a for loop and returns the first $k$ where the call was successful along with the result. The $i$ return value is an interpolant of the last Reachable() check if the whole check wasn't successful.
+If this call wasn't successful, we get an interpolant $i_1$ and assign it to $g_3$ which eliminates $g_2$. We found a new induction obligation ($g_3$, $g_2$), which is a strengthening of $F$. Now, we can try again with a potential counterexample eliminated.
+
+Last step is to analyze the induction failure. From the first check we have a model $m_1$, which is a counterexample to the k-inductiveness of $lemma$. We again get $g_1$ as a generalization of $m_1$ and check if $g_1$ is reachable from initial states. If it is reachable, we replace $lemma$ with weaker $\neg counterExample$ and push this new obligation to $F$ and $G$. On the other hand, if $g_1$ is not reachable, we strengthen $lemma$ with $g_3$ and push this new obligation to $F$.
+
+\section{PD-Kind procedure}
+
+\noindent The main PDKind procedure shown in Algorith 4 checks if P is invariant by iteratively calling the Push procedure to find a k-inductive strengthening of P for some $1 \leq k \leq n + 1$. The strengthening $G$ is k-inductive and if $F = G$, then P is invariant and we return SAFE. If the Push procedure marks isInvalid as true, the property is not invariant and we return UNSAFE. Otherwise, we update $n$ and repeat the loop.
+
+In our implementation, the property $P$ is a negation of a query, that we get on the input, which represents bad states. We also need to check if the initial states are empty, which would result in SAFE, or if the query holds in the initial states, which would result in UNSAFE.
+
+\begin{algorithm}
+\caption{Main PD-Kind procedure}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Initial states $I$, transition formula $T$, property $P$
+\State \textbf{Output:} Retrun UNSAFE if P is invalid or SAFE when there is no inductive strenghtening left
+
+\State $n \gets 0$
+    \State $F \gets (P, \neg P)$
+    \While{true}
+        \State $k \gets n + 1$
+        \State $(F, G, n_p, isInvalid) \gets$ Push($F$, $n$, $k$)
+        \If{$isInvalid$}
+        \State \Return UNSAFE
+        \EndIf
+        \If{$F = G$}
+        \State \Return SAFE
+        \EndIf
+        \State $n \gets n_p$
+        \State $F \gets G$
+    \EndWhile
+
+\end{algorithmic}
+\end{algorithm}
+\newpage
 \section{Validity checking}
 
