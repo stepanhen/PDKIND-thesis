@@ -261,6 +261,8 @@ OUTPUT tmp/analysis.aux
 INPUT ./analysis.tex
 INPUT /home/sorx/.texlive/texmf-var/luatex-cache/generic/fonts/otl/lmroman10-regular.luc
 INPUT /home/sorx/.texlive/texmf-var/luatex-cache/generic/fonts/otl/lmroman10-bold.luc
+INPUT /home/sorx/.texlive/texmf-var/luatex-cache/generic/fonts/otl/lmroman12-italic.luc
+INPUT /home/sorx/.texlive/texmf-var/luatex-cache/generic/fonts/otl/lmmono12-regular.luc
 OUTPUT tmp/implementation.aux
 INPUT ./implementation.tex
 OUTPUT tmp/experiments.aux
@@ -270,8 +272,6 @@ INPUT ./conclusion.tex
 OUTPUT tmp/bibliography.aux
 INPUT ./bibliography.tex
 INPUT /home/sorx/.texlive/texmf-var/luatex-cache/generic/fonts/otl/lmromancaps10-regular.luc
-INPUT /home/sorx/.texlive/texmf-var/luatex-cache/generic/fonts/otl/lmroman12-italic.luc
-INPUT /home/sorx/.texlive/texmf-var/luatex-cache/generic/fonts/otl/lmmono12-regular.luc
 INPUT ./tmp/thesis.lof
 OUTPUT tmp/thesis.lof
 INPUT ./tmp/thesis.lot

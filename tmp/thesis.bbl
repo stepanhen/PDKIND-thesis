@@ -19,6 +19,128 @@
 
 \refsection{0}
   \datalist[entry]{none/global//global/global}
+    \entry{blicha_golem_2023}{inproceedings}{}
+      \name{author}{3}{}{%
+        {{hash=28666c2119f9a5a8a718cfe5ff8d8b5c}{%
+           family={Blicha},
+           familyi={B\bibinitperiod},
+           given={Martin},
+           giveni={M\bibinitperiod}}}%
+        {{hash=3e80993f2b37fecc592930b0a392824c}{%
+           family={Britikov},
+           familyi={B\bibinitperiod},
+           given={Konstantin},
+           giveni={K\bibinitperiod}}}%
+        {{hash=1f57d7602abbd1e09505b9760b4a5a8b}{%
+           family={Sharygina},
+           familyi={S\bibinitperiod},
+           given={Natasha},
+           giveni={N\bibinitperiod}}}%
+      }
+      \name{editor}{2}{}{%
+        {{hash=077e76ee36a8b1e0435b135cf7ef3ab5}{%
+           family={Enea},
+           familyi={E\bibinitperiod},
+           given={Constantin},
+           giveni={C\bibinitperiod}}}%
+        {{hash=19cc21879ace6ed5c1aa22d68a36116a}{%
+           family={Lal},
+           familyi={L\bibinitperiod},
+           given={Akash},
+           giveni={A\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Cham}%
+      }
+      \list{publisher}{1}{%
+        {Springer Nature Switzerland}%
+      }
+      \strng{namehash}{b69e5ced8d7d6b64dd60f63dddb1f0c4}
+      \strng{fullhash}{ad879c26518ffa8ad46c23219cc81f4f}
+      \strng{bibnamehash}{ad879c26518ffa8ad46c23219cc81f4f}
+      \strng{authorbibnamehash}{ad879c26518ffa8ad46c23219cc81f4f}
+      \strng{authornamehash}{b69e5ced8d7d6b64dd60f63dddb1f0c4}
+      \strng{authorfullhash}{ad879c26518ffa8ad46c23219cc81f4f}
+      \strng{editorbibnamehash}{96c931708131e8ab4bfccea34aaf2250}
+      \strng{editornamehash}{96c931708131e8ab4bfccea34aaf2250}
+      \strng{editorfullhash}{96c931708131e8ab4bfccea34aaf2250}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{{Computer Aided Verification}}
+      \field{isbn}{978-3-031-37703-7}
+      \field{series}{{Lecture Notes in Computer Science}}
+      \field{title}{{The Golem Horn Solver}}
+      \field{year}{2023}
+      \field{pages}{209\bibrangedash 223}
+      \range{pages}{15}
+      \verb{doi}
+      \verb 10.1007/978-3-031-37703-7_10
+      \endverb
+    \endentry
+    \entry{10.1007/978-3-319-40970-2_35}{inproceedings}{}
+      \name{author}{4}{}{%
+        {{hash=69e1b961a056c36239ef9dd4b0dcb210}{%
+           family={Hyvärinen},
+           familyi={H\bibinitperiod},
+           given={Antti\bibnamedelimb E.\bibnamedelimi J.},
+           giveni={A\bibinitperiod\bibinitdelim E\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+        {{hash=d94f8715668a901f22f10d6595362d64}{%
+           family={Marescotti},
+           familyi={M\bibinitperiod},
+           given={Matteo},
+           giveni={M\bibinitperiod}}}%
+        {{hash=6c1bb2025f3bd26ba76e2a040dfffc50}{%
+           family={Alt},
+           familyi={A\bibinitperiod},
+           given={Leonardo},
+           giveni={L\bibinitperiod}}}%
+        {{hash=1f57d7602abbd1e09505b9760b4a5a8b}{%
+           family={Sharygina},
+           familyi={S\bibinitperiod},
+           given={Natasha},
+           giveni={N\bibinitperiod}}}%
+      }
+      \name{editor}{2}{}{%
+        {{hash=dc9f61df867eb144e9018fc6124e65b3}{%
+           family={Creignou},
+           familyi={C\bibinitperiod},
+           given={Nadia},
+           giveni={N\bibinitperiod}}}%
+        {{hash=124a9c7eb40b2fb42da88f6661060f7b}{%
+           family={Le\bibnamedelima Berre},
+           familyi={L\bibinitperiod\bibinitdelim B\bibinitperiod},
+           given={Daniel},
+           giveni={D\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Cham}%
+      }
+      \list{publisher}{1}{%
+        {Springer International Publishing}%
+      }
+      \strng{namehash}{c80cd845e24d7afff06b607c3336ab40}
+      \strng{fullhash}{ebae9e26c823cba31da1a382ac29c582}
+      \strng{bibnamehash}{ebae9e26c823cba31da1a382ac29c582}
+      \strng{authorbibnamehash}{ebae9e26c823cba31da1a382ac29c582}
+      \strng{authornamehash}{c80cd845e24d7afff06b607c3336ab40}
+      \strng{authorfullhash}{ebae9e26c823cba31da1a382ac29c582}
+      \strng{editorbibnamehash}{2a666c185400a82c4bcb711c3b66cd36}
+      \strng{editornamehash}{2a666c185400a82c4bcb711c3b66cd36}
+      \strng{editorfullhash}{2a666c185400a82c4bcb711c3b66cd36}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{This paper describes a major revision of the OpenSMT solver developed since 2008. The version 2 significantly improves its predecessor by providing a design that supports extensions, several critical bug fixes and performance improvements. The distinguishing feature of the new version is the support for a wide range of parallelization algorithms both on multi-core and cloud-computing environments. Presently the solver implements the quantifier free theories of uninterpreted functions and equalities and linear real arithmetics, and is released under the MIT license.}
+      \field{booktitle}{Theory and Applications of Satisfiability Testing -- SAT 2016}
+      \field{isbn}{978-3-319-40970-2}
+      \field{title}{OpenSMT2: An SMT Solver for Multi-core and Cloud Computing}
+      \field{year}{2016}
+      \field{pages}{547\bibrangedash 553}
+      \range{pages}{7}
+    \endentry
     \entry{7886665}{inproceedings}{}
       \name{author}{2}{}{%
         {{hash=3712e5b18594a81449956230f1ca0a13}{%
@@ -38,8 +160,8 @@
       \strng{authorbibnamehash}{fdca7f078bd4bff51913ff7579f01723}
       \strng{authornamehash}{fdca7f078bd4bff51913ff7579f01723}
       \strng{authorfullhash}{fdca7f078bd4bff51913ff7579f01723}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{2016 Formal Methods in Computer-Aided Design (FMCAD)}
