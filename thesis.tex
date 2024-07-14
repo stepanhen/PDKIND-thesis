@@ -71,8 +71,18 @@
 \usepackage[nottoc]{tocbibind} % makes sure that bibliography and the lists
 			    % of figures/tables are included in the table
 			    % of contents
-\usepackage{xcolor}         % typesetting in color
+\usepackage{mdframed}
+\usepackage[dvipsnames]{xcolor}         % typesetting in color
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows}
+\usepackage[htt]{hyphenat}
 
+\tikzstyle{class} = [rectangle, minimum width=5cm, minimum height=1.5cm,text centered, draw=black, font=\footnotesize]
+\tikzstyle{process} = [rectangle, minimum width=2.25cm, minimum height=0.7cm, text centered, draw=black, font=\footnotesize]
+\tikzstyle{decision} = [diamond, minimum width=2.25cm, minimum height=0.7cm, text centered, draw=black, font=\footnotesize]
+\tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=2.25cm, minimum height=0.7cm, text centered, draw=black, font=\footnotesize]
+\tikzstyle{result} = [ellipse, minimum width=2.25cm, minimum height=0.7cm, text centered, draw=black, font=\footnotesize]
+\tikzstyle{arrow} = [thick,->,>=stealth]
 % The hyperref package for clickable links in PDF and also for storing
 % metadata to PDF (including the table of contents).
 % Most settings are pre-set by the pdfx package.
@@ -85,6 +95,46 @@
 \usepackage{fancyvrb}       % improved verbatim environment
 \usepackage{listings}       % pretty-printer of source code
 
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0,0,0}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{1,1,1}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{codegray},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstdefinestyle{cppstyle}{
+    language=C++,
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{codegray},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
 % You might want to use cleveref for references
 % \usepackage{cleveref}
 
@@ -96,7 +146,7 @@
 % format with your supervisor.
 %
 % The basic format according to the ISO 690 standard with numbered references
-\usepackage[natbib,style=iso-numeric,sorting=none]{biblatex}
+\usepackage[natbib,style=iso-numeric,sorting=nty]{biblatex}
 % ISO 690 with alphanumeric references (abbreviations of authors' names)
 %\usepackage[natbib,style=iso-alphabetic]{biblatex}
 % ISO 690 with references Author (year)
@@ -141,16 +191,11 @@
 
 %%% Tables used in the thesis (consider if this is needed)
 %%% In mathematical theses, it could be better to move the list of tables to the beginning of the thesis.
-\listoftables
 
 %%% Abbreviations used in the thesis, if any, including their explanation
 %%% In mathematical theses, it could be better to move the list of abbreviations to the beginning of the thesis.
-\chapwithtoc{List of Abbreviations}
 
 %%% Doctoral theses must contain a list of author's publications
-\ifx\ThesisType\TypePhD
-\chapwithtoc{List of Publications}
-\fi
 
 %%% Attachments to the thesis, if any. Each attachment must be referred to
 %%% at least once from the text of the thesis. Attachments are numbered.

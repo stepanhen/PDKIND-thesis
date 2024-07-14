@@ -1,8 +1,86 @@
 \chapter{Golem}
 
-What Golem is. 
-How it works. 
-What inputs it recieves.
-How is the framework structured (language etc.). Analyze how we integrate our engine into it (library, different language or the same way as other engines are integrated.
+Golem \cite{blicha_golem_2023} is a flexible and efficient solver for CHC satisfiability problems over linear real arithmetic (LRA) and linear integer arithmetic (LIA), written in C++.
 
-Golem is a satisfiability solver for constrained horn clauses over linear, real, and integer arithmetic. It consists of multiple model-checking algorithms, which solve the satisfiability problem. Currently, there are five of them: BMC, KIND, IMC, LAWI, and SPACER. In this thesis, we will be adding an implementation of the PD-KIND algorithm into the solver.
+Golem integrates an interpolating SMT solver OpenSMT\cite{10.1007/978-3-319-40970-2_35}, and currently implements six different back-end engines for CHC solving, where each engine can use the OpenSMT not only for SMT queries but also for interpolant computation.
+
+\section{Solver overview}
+
+\begin{figure}[ht]
+    \centering
+\begin{tikzpicture}[node distance=1.5cm]
+
+% Nodes
+\node (smt2) [io] {.smt2};
+\node (interpreter) [process, right of=smt2, xshift=1.2cm] {Interpreter};
+\node (preprocessor) [process, right of=interpreter, xshift=1.2cm] {Preprocessor};
+\node (engines) [process, right of=preprocessor, xshift=1.2cm] {Engines};
+\node (opensmt) [decision, right of=engines, xshift=1.5cm] {OpenSMT};
+\node (result) [result, below of=interpreter] {Result};
+\node (sat) [below of=preprocessor, xshift=0.5cm, yshift=0.5cm, font=\footnotesize] {\textcolor{OliveGreen}{SAT + Model}};
+\node (unsat) [below of=preprocessor, xshift=0.7cm, yshift=-0.5cm, font=\footnotesize] {\textcolor{red}{UNSAT + Proof}};
+% Arrows
+\draw [arrow] (smt2) -- (interpreter);
+\draw [arrow] (interpreter) -- (preprocessor);
+\draw [arrow] (preprocessor) -- (engines);
+\draw [arrow] (engines) -- (opensmt);
+\draw [arrow] (opensmt) -- (engines);
+\draw [arrow, color=OliveGreen] (result) -- (sat);
+\draw [arrow, color=red] (result) -- (unsat);
+
+\draw [thick,->,>=stealth, color=blue] (engines.north) to [out=90,in=90] (preprocessor.north);
+\draw [thick,->,>=stealth, color=blue] (preprocessor.north) to [out=90,in=90] (interpreter.north);
+\draw [thick,->,>=stealth, color=blue] (interpreter) -- (result);
+\end{tikzpicture}
+\caption{Architecture of Golem}
+    \label{fig:golem_diagram}
+\end{figure}
+
+
+\noindent In this section, we will describe the Golem solving process depicted in Figure \ref{fig:golem_diagram}.
+\section*{Reading and interpreting CHCs}
+\noindent Golem reads the input from a file in the .smt2 format, which is an extension of the SMT-LIB language\cite{BarFT-SMTLIB}. The interpreter builds an internal representation of the CHC system by first normalizing the CHCs to ensure that each predicate has only variables as arguments and then converting the CHCs to the graph representation. The graph representation is then passed to the preprocessor.
+
+\section*{Preprocessing}
+\noindent The Preprocessor applies transformations to simplify the graph representation:
+        \begin{itemize}
+            \item \textbf{Predicate Elimination:} Removes predicates, that are not present in both the body and the head of the same clause.
+            \item \textbf{Clause Merging:} Merges clauses with the same uninterpreted predicate by disjoining their constraints.
+            \item \textbf{Redundant Clause Deletion:} Removes clauses, that cannot participate in the proof of unsatisfiability. 
+        \end{itemize}
+    \section* {Engines:}
+    \noindent The graph is then solved with one of the engines (this option is specified by the user):
+        \begin{itemize}
+            \item Bounded Model Checking (BMC) \cite{10.1007/3-540-49059-0_14}
+            \item k-Induction (KIND) \cite{10.1007/3-540-40922-X_8}
+            \item Interpolation-based Model Checking (IMC) \cite{10.1007/978-3-540-45069-6_1}
+            \item Lazy Abstractions with Interpolants (LAWI) \cite{10.1007/11817963_14}
+            \item Spacer \cite{10.1007/978-3-319-08867-9_2}
+            \item Transition Power Abstraction (TPA) \cite{blicha_golem_2023}
+        \end{itemize}
+
+The user can also select the option to produce a validity witness. When the engine solves the problem, it generates a model for the SAT result or a proof for the UNSAT result. These models and proofs are translated back by the preprocessor to match the original system.
+
+\begin{figure}[H]
+\begin{align*}
+    x \leq 1 &\implies I(x) \quad &\text{\color{red}{\(I(1)\)}} \\
+    x' = x + 1 &\implies T(x, x') \quad &\text{\color{red}{\(T(1, 2)\)}} \\
+    I(x) \land T(x, x') &\implies S(x') \quad &\text{\color{red}{\(S(2)\)}} \\
+    S(x) \land x \geq 2 &\implies \text{\color{red}{false}} \quad &\text{\color{red}{false}}
+\end{align*}
+    \caption{UNSAT + Proof example}\label{ex:UNSAT}
+\end{figure}
+
+In Figure \ref{ex:UNSAT}, we have a CHC system and a proof of its unsatisfiability. There are four derivation steps. The first step sets the variable $x$ to $1$ and gets I(1). The second step sets $x := 1$ and $x' := 2$ and gets T(1, 2). Step three applies resolution to the instance of the third clause for $x := 1$ and $x' := 2$ and the previously derived facts L(1) and T(1,2) and gets S(2). The last step again applies resolution to the instance of the fourth clause with $x := 2$ and the derived fact S(2) and gets false. 
+
+
+\section{Engine integration}
+\noindent The architecture described above allows us to integrate an engine into the Golem solver without modifying it. There are several ways we can do it. 
+
+Writing a library in a different programming language could be interesting because we could leverage the pros of other languages. The downside is that the interaction of C++ and another language could bring various overheads. Our goal is to create an efficient engine, and therefore, having these overheads would not be optimal.
+
+Another option would be to write a C++ library and include it in the project. This would eliminate the downsides of the first option, but there would still be some issues. For example, we would have to integrate an SMT solver for satisfiability checking and interpolation. 
+
+The most efficient option is to integrate the engine directly into the solver the same way the other engines are integrated. This would allow us to directly utilize OpenSMT, which is integrated into Golem, for satisfiability checking and interpolation. We could also use many other features that Golem has, making our development easier.
+
+

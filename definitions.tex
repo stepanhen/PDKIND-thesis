@@ -1,11 +1,61 @@
 
-\chapter{Definitions}
-
-Describe theory needed to understand the following chapters.
+\chapter{Background}
 
 \section{Transition System}
+\noindent In computer science and software verification, it is often helpful to use transition systems as a layer of abstraction over various problems, such as the satisfiability of the Constrained Horn Clause (CHC). Transition systems make it easier to analyze and verify given properties by providing a way to represent the behavior of a computer system or some abstract computation device. This chapter introduces the basic concepts of Transitional Systems, which will help us understand the following chapters.
+
+\vspace{\baselineskip}\noindent\textbf{Definition (Transition System)\cite{7886665}:} A transition system is a 4-tuple ($S$, $\mathcal{F}$, $\mathcal{T}$, $\mathcal{I}$), where:
+\begin{itemize}
+    \item $S$ is a finite set of state variables $\vec{x}$, where each $x \in \vec{x}$ has its primed version $x'$ and state $s$ is an interpretation of $\vec{x}$ that assigns a value $s(x)$ to each $x \in \vec{x}$.
+    \item $\mathcal{F}$ is a set of quantifier-free formulas, where for any $F \in \mathcal{F}$ and a state variable $\vec{x}$, $F(\vec{x})$ is a state formula and holds in a state $s$.
+    \item $\mathcal{T}$ is a set of quantifier-free formulas, where for any $T \in \mathcal{T}$ and a state variable $\vec{x}$, $T(\vec{x}, \vec{x}')$ is a transition formula describing transitions.
+    \item $\mathcal{I}$ is a set of formulas, where for any $I \in \mathcal{I}$ and a state variable $\vec{x}$, $I(\vec{x})$ is a state formula describing initial states.
+\end{itemize}
+
+\vspace{\baselineskip}\noindent\textbf{Definition (Successor):\cite{7886665}} State $s$ has a successor $s'$, when $T(s(\vec{x}), s'(\vec{x}'))$ is true.
+
+\vspace{\baselineskip}\noindent\textbf{Definition (k-reachability):\cite{7886665}} State $s$ is k-reachable if there exists a sequence \newline\noindent $I = s_0, s_1, s_2, \ldots, s_k = s$, where each $s_{i+1}$ is a successor of $s_i$.
+
+\vspace{\baselineskip}Let us have a transition system and property $P$, then $P$ is invariant if all states reachable in the system satisfy it. Otherwise, there exists a trace to a counterexample $\neg P$.
+
 
 \section{Satisfiability Modulo Theories}
+\noindent In logic and computer science, the Boolean satisfiability problem, also called SAT, is one of the most well-known problems. In 1971, it was proven to be the first NP-complete problem  \cite{10.1145/800157.805047}. This greatly helped in the field of complexity theory by providing a tool for the classification of other computational problems. SAT is widely used, but there are cases where it is not possible to represent a problem using only the two Boolean values, true and false.
 
+This led to the generalization of SAT to more complex formulas, which can include real numbers, integers, or even lists and other data structures. In other words, an SMT instance arises as a generalization of SAT instance, where Boolean variables are replaced with predicates of some theory. Examples of such theories are uninterpreted functions (UF), arrays or linear arithmetics (LA), or, more specifically, linear real arithmetics (LRA), which we will focus on in the rest of this work.
 \section{OpenSMT}
+\noindent OpenSMT\cite{10.1007/978-3-642-12002-2_12} is an open-source SMT solver developed by the Formal Verification and Security Lab based at the University of Lugano. It includes a parser for SMT-LIB\cite{BarFT-SMTLIB} language, a state-of-the-art SAT-Solver, and a clean interface for new theory solvers, currently supporting various logics such as QF\_UF, QF\_LIA, QF\_LRA, and more. Currently, there is a second version OpenSMT2\cite{10.1007/978-3-319-40970-2_35}, which supports interpolation for propositional logic, QF\_UF, QF\_LRA, QF\_LIA, and QF\_IDL.
 
+
+\section{SMT-LIB}
+\noindent SMT-LIB\cite{BarFT-SMTLIB} is an international initiative that provides standard descriptions of background theories used in SMT solvers and develops common input and output languages for SMT solvers. It offers a unified framework for the description of SMT problems.  Additionally, SMT-LIB maintains a library of input problems, or benchmarks, written in the SMT-LIB language to support the development of different SMT solvers.
+
+
+\begin{figure}[h]
+\begin{mdframed}
+\begin{lstlisting}[language=Lisp]
+; Integer arithmetic
+(set-logic QF_LIA)
+(declare-const x Int)
+(declare-const y Int)
+
+; Assertion
+(assert (= (- x y) (+ x (- y) 1)))
+
+; Check satisfiability
+(check-sat)
+
+(exit)
+\end{lstlisting}
+\end{mdframed}
+\caption{SMT-LIB input example}
+\end{figure}
+
+In the Figure \ref{ex:ind vs kind} we can see an example of the SMT-LIB input taken from the offical examples of SMT-LIB\cite{BarFT-SMTLIB} .\begin{itemize}
+\item Lines starting with ';' represent comments and are ommited.
+\item \textbf{(set-logic QF\_LIA)}: This command sets the logic to Quantifier-Free Linear Integer Arithmetic (QF\_LIA), which involves linear integer arithmetic expressions without quantifiers.
+\item \textbf{(declare-const x Int) and (declare-const y Int)}: These commands declare two integer constants x and y.
+\item \textbf{(assert (= (- x y) (+ x (- y) 1)))}: This assertion states that $x - y$ should be equal to $x - y + 1$
+\item \textbf{(check-sat)}: This command asks the SMT solver to check the satisfiability of the assertion.
+\item \textbf{(exit)}: This command exits the solver.
+\end{itemize}

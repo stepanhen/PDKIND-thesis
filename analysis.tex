@@ -2,7 +2,10 @@
 
 % Describe the individual procedures of the algorithm and in each part analyze how the implementation went. If there were more ways to do it, compare them.
 % The last section should describe how we also added validity witnesses because Golem and other engines in it produce them).
-In this chapter, in sections 4.1-4.4, we will be using methodology and definitions described in \cite{7886665}.
+\noindent In this chapter, we describe and analyze the PDKind algorithm. In sections 4.1-4.4, we will be using methodology, algorithms, and definitions described in \cite{7886665}.
+We will also describe the modifications of the algorithm and the decisions we made when implementing some abstract data structures from the paper.
+
+After reading this chapter, the reader should be able to understand the parts of the PDKind algorithm and orientate in our implementation. 
 
 \section{Induction vs k-Induction}
 
@@ -27,47 +30,58 @@ This method is more powerful for properties that are not inductive but can be sh
 More precise definitions are shown in \cite{7886665}.
 
 \subsection*{Relative Power}
-\noindent    \textbf{With Quantifier Elimination}:
-        Induction and k-induction have the same deductive power. K-Induction might provide more concise proofs.
+\noindent With Quantifier Elimination, induction and k-induction have the same deductive power. K-Induction might provide more concise proofs.
 
-\noindent    \textbf{Without Quantifier Elimination}:
-        K-Induction can be exponentially more concise than induction. Stronger in certain logical theories like pure Boolean logic or linear arithmetic.
+Without Quantifier Elimination k-induction can be exponentially more concise than induction. Stronger in certain logical theories like pure Boolean logic or linear arithmetic.
 
 \subsection*{Practical Effectiveness}
 \noindent \cite{7886665} shows that k-Induction is effective, especially when combined with algorithms like IC3.
-Here we show its effectiveness on a simple example.
-
-\vspace{\baselineskip}\noindent Consider a transition system with an array \( a \) and the following properties:
-
-
-\vspace{\baselineskip}\noindent \textbf{Invariant Property \( P \)}: \( a[0] = 0 \)
-
-\noindent \textbf{Initial State}:
-
-\( i \gets 0 \)
-
-\( j \gets 0 \)
-
-\( a[0] \gets 0 \)
+Here we demonstrate its effectiveness on a simple example from the paper\cite{7886665}.
 
 \newpage
-\vspace{\baselineskip}\noindent \textbf{Transition}:
 
-Randomly select \( j \)
+\begin{figure}
+\begin{mdframed}
+\begin{lstlisting}
+Invariant Property P: a[0] == 0
 
-Increment \( i \)
+Initial States:
+i = 0
+j = 0
+a[0] = 0
 
-\( a[i] \gets a[j] \)
+Transition:
+j = Random() mod (i+1)
+i = i + 1 mod N
+a[i] = a[j]
+\end{lstlisting}
+    \caption{Induction vs K-induction example}\label{ex:ind vs kind}
+\end{mdframed}
+\end{figure}
 
-\vspace{\baselineskip}Induction cannot prove \( P \) as invariant because \( P \) is not inductive in a single step. K-Induction, however, can be used to prove \( P \) as \( (N+1) \)-inductive, where \( N \) is the length of the array.
+\vspace{\baselineskip}Consider a transition system depicted in Figure \ref{ex:ind vs kind}.
+We can see, that induction cannot prove \( P \) as invariant because \( P \) is not inductive in a single step. P is even k-inductive for $k \leq N$. However, we can use k-induction to prove \( P \) is \( (N+1) \)-inductive, where \( N \) is the length of the array.
 
-\vspace{\baselineskip}\noindent \textbf{Base Case (k-init)}: \( P \) holds in the first \( k \) states.
+\vspace{\baselineskip}\noindent \textbf{Proof:}
+\begin{itemize}
+    \item Any sequence of $N+1$ states has a transition that resets i to 0.
 
-\noindent \textbf{Inductive Step (k-cons)}: If \( P \) holds in a sequence of \( k \) states, it holds in the next state.
+\item All transitions increment i to at most $N - 1$.
+
+\item Pick j between 0 and i and do a[i] = a[j].
+
+\item If P holds in all states in this sequence and $i = N - 1$ in the last state, then $a[0]=a[1]=\dots=a[N-1]=0$.
+
+\item If $i \neq N - 1$ in the last state, then a[0] is unchanged in next transition.
+\end{itemize}
+\noindent This concludes that P is $(N + 1)$-inductive.
+
+\hfill\square
+
 
 \vspace{\baselineskip}This shows that \( k \)-induction can handle properties where simple induction fails, especially in systems with complex state transitions.
 
-\section{Rechability checking procedure}
+\section{Rechability checking procedure}\label{ReachabilityChecking}
 
 \noindent To understand the following, we need to introduce a few definitions.
 Let us have a formula in the form 
@@ -76,7 +90,7 @@ Let us have a formula in the form
 \end{equation}
 Where for \( k > 1 \), \( T[F]^k(\vec{x}, \vec{x}') \) is defined as
 \begin{equation*}
-    T(\vec{x}, \vec{w}_1) \land \bigwedge_{i=1}^{k-1} \left( F(\vec{w}_i) \land T(\vec{w}_i, \vec{w}_{i+1}) \right) \land T(\vec{w}_{k-1}, \vec{x}')
+    T(\vec{x}, \vec{w}_1) \land \bigwedge_{i=1}^{k-2} \left( F(\vec{w}_i) \land T(\vec{w}_i, \vec{w}_{i+1}) \right) \land F(\vec{w}_{k-1}) \land T(\vec{w}_{k-1}, \vec{x}')
 \end{equation*}
 where $\vec{w}$ are state variables in the intermediate states.
 
@@ -93,10 +107,9 @@ where $\vec{w}$ are state variables in the intermediate states.
         \item $G(\vec{x})$ and $A(\vec{x})$ are consistent.
 \end{enumerate}
 
-\newpage
-
-\begin{algorithm}
-    \caption{Reachable}\label{alg:1}
+\renewcommand{\figurename}{Algorithm}
+\begin{figure}[h]
+\begin{mdframed}
 \begin{algorithmic}[1]
 \State \textbf{Input:} Target state $F$, maximum steps $k$
 \State \textbf{Data:} Reachability frames $R$, initial states $I$, transition states $T$
@@ -121,7 +134,9 @@ where $\vec{w}$ are state variables in the intermediate states.
 \EndWhile
 
 \end{algorithmic}
-\end{algorithm}
+\end{mdframed}
+\caption{Reachable method}\label{alg:1}
+\end{figure}
 
 \noindent Method shown in Algorithm \ref{alg:1} tries to reach the initial states backwards by using a depth-first search strategy.
 
@@ -132,10 +147,10 @@ In our implementation, we needed to figure out the following: \textbf{Satisfiabi
 \section*{Satisfiability Checking}
 \noindent We could use various SMT solvers for satisfiability checking, but Golem already has a wrapper around the OpenSMT solver and uses it in every other engine. Therefore we will use it too for every other satisfiability check, that we will need.
 
-\newpage
 \section*{Generalization}
-\begin{algorithm}
-    \caption{Generalize}\label{alg:2}
+\noindent Golem doesn't provide us with the generalization method. Still, it has needed components to create our method, as shown in pseudocode Algorithm \ref{alg:2}. It eliminates all variables except the state ones, represented as $\vec{x}$ from the formula \( T[B]^k(\vec{x}, \vec{w}, \vec{y}) \wedge C(\vec{y}) \) to satisfy the generalization definition.
+\begin{figure}[H]
+\begin{mdframed}
 \begin{algorithmic}[1]
 \State \textbf{Input:} Model $M$, transition formula $T$, state formula $F$
 \State \textbf{Output:} Generalized formula $G$
@@ -145,42 +160,42 @@ In our implementation, we needed to figure out the following: \textbf{Satisfiabi
     \State \Return $G$
 
 \end{algorithmic}
-\end{algorithm}
-\noindent Golem doesn't provide us with the generalization method. Still, it has needed components to create our method, shown in pseudocode Algorithm \ref{alg:2}. It eliminates all variables except the state ones, represented as $\vec{x}$ from the formula \( T[B]^k(\vec{x}, \vec{w}, \vec{y}) \wedge C(\vec{y}) \) to satisfy the generalization definition.
+\end{mdframed}
+\caption{Generalize method}\label{alg:2}
+\end{figure}
 
-\section*{Explanation}
-\noindent Instead of the \textit{Explain()} method, we will use another feature of the OpenSMT solver and that is interpolation. To get the interpolant, we tell the solver to give us an interpolation of the first two formulas inserted in it, i.e. for \textit{CheckSat($A \wedge B \wedge C$)} we want interpolation of $A \wedge B$. 
+\section*{Explanation} \label{Explain}
+\noindent Instead of the \texttt{Explain()} method, we will use another feature of the OpenSMT solver and that is interpolation. To get the interpolant, we tell the solver to give us an interpolation of the first two formulas inserted in it, i.e. for \texttt{CheckSat($A \wedge B \wedge C$)} we want interpolation of $A \wedge B$. 
 
 
-On line 13 in Algorithm \ref{alg:1}, we need an interpolant from the \textit{CheckSAT()} that happened in the previous \textit{Reachable()} call. Therefore, we need to modify our \textit{Reachable()} method on line 17 to also return an interpolant along with the false result. Later, we will see that in our implementation each \textit{CheckSAT()} has its solver instance. To get the interpolant, we just ask the solver to return it if the \textit{CheckSAT()} fails.
+On line 13 in Algorithm \ref{alg:1}, we need an interpolant from the \texttt{CheckSAT()} that happened in the previous \texttt{Reachable()} call. Therefore, we need to modify our \texttt{Reachable()} method on line 17 to also return an interpolant along with the false result. Later, we will see that in our implementation each \texttt{CheckSAT()} has its solver instance. To get the interpolant, we just ask the solver to return it if the \texttt{CheckSAT()} fails.
 
-\section*{Reachability frames representation}
-\noindent For the \textit{Reachability frames} representation, we had several choices. The simplest one was to create a list $R$ of formulas (where $R_i := R[i]$) each time we call \textit{Reachable()} from outside. This approach is simple, yet not efficient since we would be losing the whole \textit{Reachability frames} we built in each call, instead of reusing it in another call. 
+\section*{Reachability frames representation}\label{RFrames}
+\noindent For the \texttt{Reachability frames} representation, we had several choices. The simplest one was to create a list $R$ of formulas (where $R_i := R[i]$) each time we call \texttt{Reachable()} from outside. This approach is simple, yet not efficient since we would be losing the whole \texttt{Reachability frames} we built in each call, instead of reusing it in another call. 
 
-Therefore we will create a better approach and that is a \textit{Reachability checker} class, where each instance of this class will have such list, but calling \textit{Reachable()} on that instance would only grow the \textit{Reachability frames} and wouldn't delete it.
-\newpage
-\section{Push procedure}
+Therefore we will create a better approach and that is a \texttt{Reachability} class, where each instance of this class will hold such list, but calling \texttt{Reachable()} on that instance would only grow the \texttt{Reachability frames} and wouldn't delete it.
+\section{Push procedure} \label{Push}
 
-\noindent \textbf{Definition (Induction Frame)\cite{7886665}:} A set of tuples $F \subset \mathbb{F} \times \mathbb{F}$, where $\mathbb{F}$ is a set of all state formulas in theory $T$, is an induction frame at index $n$ if $(P, \neg P) \in F$ and $\forall (lemma, counterExample) \in F$:
+\noindent \textbf{Definition (Induction Frame)\cite{7886665}:}\label{def:IFrame} A set of tuples $F \subset \mathbb{F} \times \mathbb{F}$, where $\mathbb{F}$ is a set of all state formulas in theory $T$, is an induction frame at index $n$ if $(P, \neg P) \in F$ and $\forall (lemma, counterExample) \in F$:
 \begin{itemize}
     \item $lemma$ is valid up to $n$ steps and refutes $counterExample$
     \item $counterExample$ states can be extended to a counterexample to $P$.
 \end{itemize}
 
-\noindent This procedure shown in Algorithm \ref{alg:3} is the core of PDKind algorithm, We will break it down into smaller pieces to understand how it works.
+\noindent The procedure shown in Algorithm \ref{alg:3} is the core of the PDKind algorithm, We will break it down into smaller pieces to understand how it works.
 
-The first part starts on line 11 where we need to check if lemma is k-inductive. We can also notice that the CheckSAT returns model $m_1$. In our implementation, CheckSAT doesn't return model, but we can solve this by initializing a new solver instance for each check. If the check is true, we can ask the solver for a model that satisfies the inserted formula.
-If the check isn't successful, we can push a new obligation to our new induction frame $G$ and continue. Else we get the model $m_1$ and save it for later.
+The first part starts on line 11 where we need to check if \texttt{lemma} is k-inductive. We can do that by checking if the formula $(F_{ABS} \wedge T_k \wedge \neg lemma)$ is satisfiable. We can notice that the \texttt{CheckSAT} call returns model \texttt{m\_1}. In our implementation, \texttt{CheckSAT} doesn't directly return model, but we can ask the solver to provide one. This is done by initializing a new solver instance for each check and then asking for a model, if the check is true.
+If the formula $(F_{ABS} \wedge T_k \wedge \neg lemma)$ isn't satisfiable, we can push a new obligation to our new induction frame \texttt{G} and continue. Else we get the model \texttt{m\_1} and save it for later.
 
-In the second part, on line 16, we check if $counterExample$ is reachable. If it is, we get model $m_2$ and generalize it to $g_2$. We know that from $g_2$, we can reach $\neg P$, so we need to check if $g_2$ is reachable from initial states. If it is reachable, the property is invalid, and we mark $isInvalid \gets true$.
+In the second part, on line 16, we check if \texttt{counterExample} is reachable. If it is, we get model \texttt{m\_2} and generalize it to \texttt{g\_2}. We know that from \texttt{g\_2}, we can reach \texttt{\neg P}, so we need to check if \texttt{g\_2} is reachable from initial states. If it is reachable, the property is invalid, and we mark \texttt{isInvalid \gets true}.
 
-On line 19, we can see that \textit{Reachable()} accepts more arguments and returns more values than shown in Algorithm \ref{alg:1}. This new \textit{Reachable($i$,$j$,$F$)} method checks if $F$ is reachable in k steps where $i\leq k \leq j$. To achieve this behavior in our implementation, we create a wrapper function that calls \textit{Reachable($k$, $F$)} in a for loop and returns the first $k$ where the call was successful along with the result. The $i$ return value is an interpolant of the last \textit{Reachable()} check if the whole check wasn't successful.
-If this call wasn't successful, we get an interpolant $i_1$ and assign it to $g_3$ which eliminates $g_2$. We found a new induction obligation ($g_3$, $g_2$), which is a strengthening of $F$. Now, we can try again with a potential counterexample eliminated.
+On line 19, we can see that \texttt{Reachable()} accepts more arguments and returns more values than shown in Algorithm \ref{alg:1}. This new \texttt{Reachable($i$,$j$,$F$)} method checks if $F$ is reachable in k steps where $i\leq k \leq j$. To achieve this behavior in our implementation, we create a wrapper function that calls \texttt{Reachable($k$, $F$)} in a for loop and returns the first \texttt{k} where the call was successful along with the result. The \texttt{i} return value is an interpolant of the last \texttt{Reachable()} check if the whole check wasn't successful.
 
-Last step is to analyze the induction failure. From the first check we have a model $m_1$, which is a counterexample to the k-inductiveness of $lemma$. We again get $g_1$ as a generalization of $m_1$ and check if $g_1$ is reachable from initial states. If it is reachable, we replace $lemma$ with weaker $\neg counterExample$ and push this new obligation to $F$ and $G$. On the other hand, if $g_1$ is not reachable, we strengthen $lemma$ with $g_3$ and push this new obligation to $F$.
+If this call wasn't successful, we get an interpolant \texttt{i\_1} and assign it to \texttt{g\_3} which eliminates \texttt{g\_2}. We found a new induction obligation \texttt{(g\_3, g\_2)}, which is a strengthening of \texttt{F}. Now, we can try again with a potential counterexample eliminated.
 
-\begin{algorithm}
-    \caption{Push}\label{alg:3}
+Last step is to analyze the induction failure. From the first check we have a model \texttt{m\_1}, which is a counterexample to the k-inductiveness of \texttt{lemma}. We again get \texttt{g\_1} as a generalization of \texttt{m\_1} and check if \texttt{g\_1} is reachable from initial states. If it is reachable, we replace \texttt{lemma} with weaker \texttt{\neg counterExample} and push this new obligation to \texttt{F} and \texttt{G}. On the other hand, if \texttt{g\_1} is not reachable, we strengthen \texttt{lemma} with \texttt{g\_3} and push this new obligation to \texttt{F}.
+\begin{figure}[H]
+\begin{mdframed}
 \begin{algorithmic}[1]
 \State \textbf{Input:} Induction frame $F$, $n$, $k$
 \State \textbf{Output:} Old induction frame $F$, new induction frame $G$, $n_p$, $isInvalid$ 
@@ -193,7 +208,7 @@ Last step is to analyze the induction failure. From the first check we have a mo
         \State $(lemma, counterExample)  \gets$ $Q$.pop()
         \State $F_{ABS} \gets \bigwedge a_i$ ,where ($a_i$, $b_i$) \in $F$ \forall $i$ \in \{1,...,$F$.length()\}
         \State $T_k \gets T[F_{ABS}]^k$ by definition
-        \State $(s_1, m_1) \gets$ CheckSAT($F_{ABS}, T_k, \neg lemma$) // $m_1$ is model if is SAT
+        \State $(s_1, m_1) \gets$ CheckSAT($F_{ABS}, T_k, \neg lemma$)
         \If{$\neg s_1$}
             \State $G \gets G \cup (lemma, counterExample)$
             \State Continue
@@ -201,7 +216,7 @@ Last step is to analyze the induction failure. From the first check we have a mo
         \State $(s_2, m_2) \gets$ CheckSAT($F_{ABS} \wedge T_k \wedge counterExample$)
         \If{$s_2$}
             \State $ g_2 \gets $ Generalize($m_2, T_k, counterExample$)
-            \State $(r_1, i_1, n_1) \gets $ Reachable($n-k+1$, $n$, $g_2$) // $i_1$ is interpolant
+            \State $(r_1, i_1, n_1) \gets $ Reachable($n-k+1$, $n$, $g_2$)
             \If{$r_1$}
                 \State $ isInvalid \gets true $
                 \State Continue
@@ -230,18 +245,20 @@ Last step is to analyze the induction failure. From the first check we have a mo
     \EndWhile
         
 \end{algorithmic}
-\end{algorithm}
+\end{mdframed}
+\caption{Push procedure}\label{alg:3}
+\end{figure}
 
 
 \newpage 
 \section{PD-Kind procedure}
 
-\noindent The main PDKind procedure shown in Algorithm \ref{alg:4} checks if P is invariant by iteratively calling the Push procedure to find a k-inductive strengthening of P for some $1 \leq k \leq n + 1$. The strengthening $G$ is k-inductive and if $F = G$, then P is invariant and we return SAFE. If the Push procedure marks isInvalid as true, the property is not invariant and we return UNSAFE. Otherwise, we update $n$ and repeat the loop.
+\noindent The main PDKind procedure shown in Algorithm \ref{alg:4} checks if propert \texttt{P} is invariant by iteratively calling the \texttt{Push} procedure to find a k-inductive strengthening of \texttt{P} for some $1 \leq k \leq n + 1$. The strengthening \texttt{G} is k-inductive and if \texttt{F == G}, then \texttt{P} is invariant and we return \texttt{SAFE}. If the \texttt{Push} procedure marks \texttt{isInvalid} as \texttt{True}, the property is not invariant and we return \texttt{UNSAFE}. Otherwise, we update \texttt{n} and repeat the loop.
 
-In our implementation, the property $P$ is a negation of a query, that we get on the input, which represents bad states. We also need to check if the initial states are empty, which would result in SAFE, or if the query holds in the initial states, which would result in UNSAFE.
+In our implementation, the property \texttt{P} is a negation of a query, that we get on the input, which represents bad states. We also need to check if the initial states are empty, which would result in \texttt{SAFE}, or if the query holds in the initial states, which would result in \texttt{UNSAFE}.
 
-\begin{algorithm}
-    \caption{Main PD-Kind procedure}\label{alg:4}
+\begin{figure}[h]
+\begin{mdframed}
 \begin{algorithmic}[1]
 \State \textbf{Input:} Initial states $I$, transition formula $T$, property $P$
 \State \textbf{Output:} Retrun UNSAFE if P is invalid or SAFE when there is no inductive strengthening left
@@ -262,25 +279,28 @@ In our implementation, the property $P$ is a negation of a query, that we get on
     \EndWhile
 
 \end{algorithmic}
-\end{algorithm}
+\end{mdframed}
+\caption{Main PD-Kind procedure}\label{alg:4}
+\end{figure}
 
 \section{Validity checking}
 \noindent In many cases, it is often required to provide a witness to the answer obtained from solving the CHC satisfiability problem. In software verification, a satisfiability witness corresponds to a program invariant, and an unsatisfiability witness corresponds to counterexample paths. Generally, a satisfiability witness is a model that provides an interpretation of all CHC predicates and variables that satisfy all the clauses. An unsatisfiability witness is a proof presented as a sequence of derivations of ground instances of the predicates, where for the proof to be valid, each premise must be a conclusion of some previously derived step.
 
 In Golem \cite{blicha_golem_2023}, each engine provides a validity witness when the option \texttt{--print-witness} is used. To follow the structure Golem has, we need to implement such an option for our PDKind engine as well.
 
-\section*{UNSAT witness}
-First, we will describe the implementation of the unsatisfiability witness in our engine. The goal is to generate paths to counterexamples during the CHC satisfiability solving process. To do that, we utilize a function in the Golem solver, which can generate the path to a counterexample based on the number of steps required to reach the counterexample, for clarity, we will call them steps to the counterexample. This allows us to only keep track of the steps to counterexample for each counterexample we encounter during the CHC solving. To do this, we take the \textit{Induction frame} (\textit{lemma}, \textit{counterExample}) and create a structure for the \textit{counterExample}, which will hold the formula and the steps to the counterxample.
+\section*{UNSAT witness} \label{UNSATWit}
+\noindent First, we will describe the implementation of the unsatisfiability witness in our engine. The goal is to generate paths to counterexamples during the CHC satisfiability solving process.
 
-Next, we need to correctly assign the steps to the counterexample to each counterexample, that we find. In Algorithm \ref{alg:3}, we note that a new counterexample $g_2$ is created only on line 18, which we then use in the else branch starting on line 23. The steps to counterexample assigned to $g_2$ is the steps to the counterexample of \textit{counterExample} + $k$, which is the length of the transition passed as a parameter to \textit{Generalize()} on line 16.
+To do that, we utilize a function in the Golem solver, which can generate the path to a counterexample based on the number of steps required to reach the counterexample, for clarity, we will call them \texttt{steps to the counterexample}. This allows us to only keep track of the \texttt{steps to a counterexample} for each potential counterexample we encounter during the CHC solving. The \texttt{steps to a counterexample} of a potential counterexample is a number of steps needed to reach the counterexample from the potential counterexample. To do this, we take the \texttt{Induction frame} \texttt{(lemma, counterExample)} and create a structure for the \texttt{counterExample}, which will hold the formula and the \texttt{steps to a counterxample}.
 
-Then we need to modify \textit{Push()} to return the steps to the counterexample. On line 21, when we encounter a reachable counterexample $g_2$, we assign the steps to the counterexample returned by \textit{Push()} to be the steps to the counterexample of $g_2$.
+In the next step, we need to correctly assign the \texttt{steps to a counterexample} to each counterexample, that we find. In Algorithm \ref{alg:3}, we note that a new counterexample \texttt{g\_2} is created only on line 18, which we then use in the else branch starting on line 23. The \texttt{steps to a counterexample} assigned to \texttt{g\_2} is the \texttt{steps to a counterexample} of \texttt{counterExample} increased by \texttt{k}.
+
+Finally, we need to modify \texttt{Push()} to return the \texttt{steps to a counterexample}. On line 21, when we encounter a reachable counterexample \texttt{g\_2}, we assign the \texttt{steps to a counterexample} returned by \texttt{Push()} to be the \texttt{steps to a counterexample} of \texttt{g\_2}.
 
 \section*{SAT witness}
-\noindent In this section, we will describe the implementation of the satisfiability witness in the PDKind engine. The aim is to construct a program invariant during the CHC satisfiability solving process.
+\noindent In this section, we will describe the implementation of the satisfiability witness in the PDKind engine. The aim is to construct an inductive invariant during the CHC satisfiability solving process.
 
-During the \textit{Push()} procedure described in Algorithm \ref{alg:3}, we are building an \textit{Induction Frame}, which is a set of tuples (\textit{lemma}, \textit{counterExample}), where the lemma holds for \textit{n} steps and refutes the counterExample. After the solving procedure is finished, we end up on line 12 of the PDKind procedure in Algorithm \ref{alg:4}, because we are constructing the satisfiability witness. We can now take the final \textit{Induction Frame} and make a conjunction of all lemmas. What we get is an \textit{n}-inductive invariant because the lemmas hold for \textit{n} steps and there exists no strengthening of the \textit{Induction Frame}, as on line 11 we get that \( F = G \).
+In the \texttt{Push()} procedure described in Algorithm \ref{alg:3}, we are constructing an \texttt{Induction Frame}, which is a set of tuples \texttt{(lemma, counterExample)}, where the \texttt{lemma} holds for \texttt{n} steps and refutes the \texttt{counterExample}. After the solving procedure is finished, we end up on line 12 of the PDKind procedure in Algorithm \ref{alg:4} because we are constructing the satisfiability witness. We can then take the final \texttt{Induction Frame} and form a conjunction of all the lemmas within it. This gives us an n-inductive invariant, as the lemmas hold for \texttt{n} steps, and there is no other strengthening of the \texttt{Induction Frame}, as indicated by \( F = G \) at line 11.
 
-The final step is to transform the \textit{n}-inductive invariant into an inductive invariant. To do that, we utilize the Golem solver's function \textit{kinductiveToInductive()}, which takes the \textit{n}-inductive invariant, \textit{n}, and the system and returns an inductive invariant. This invariant is the validity witness for the SAT answer.
+The final step is to transform the n-inductive invariant into an inductive invariant. To do that, we utilize the Golem solver's function \texttt{kinductiveToInductive()}, which takes the n-inductive invariant, \texttt{n}, and the system and returns an inductive invariant. This invariant is the validity witness for the \texttt{SAT} answer.
 
-\vspace{\baselineskip}\noindent During the development we could validate those witnesses by using Golem solver's inner validator, which takes the witness and validates it. For that we created various tests, testing both the correctness of the engine and the correctness of the witnesses.

@@ -1,14 +1,17 @@
 \chapter{Introduction}
 
-\noindent In computer science and software engineering, the idea of software verification is becoming more and more important. Verification checks whether the program or system operates correctly and fulfills the set properties. The goal is to detect bugs during the development process.
+\noindent In computer science and software engineering, the idea of software verification is becoming more and more important. Verification checks whether the program or system operates correctly and fulfills the given properties. The goal is to detect bugs and errors during the development process.
 
-One of the frameworks that is becoming popular is the Constrained Horn Clauses (CHC) framework. CHC is a fragment of First Order Logic modulo constraints that captures many program verification problems as constraint solving. The main advantage of CHC is that it separates modeling from solving by translating the program's behavior and properties into constrained language and then using a specialized CHC solver to solve various verification tasks across programming languages by deciding the satisfiability problem of a CHC system.
+One of the frameworks that is becoming popular is the Constrained Horn Clauses(CHC)\cite{10.1007/978-3-031-13185-1_2} framework. CHC is a fragment of First Order Logic modulo constraints that captures many program verification problems as constraint solving. The main advantage of CHC is that it separates modeling from solving by translating the program's behavior and properties into constrained language and then using a specialized CHC solver to solve various verification tasks across programming languages by deciding the satisfiability problem of a CHC system.
 
-Golem \cite{blicha_golem_2023} is one such solver, which integrates the interpolating SMT solver OpenSMT \cite{10.1007/978-3-319-40970-2_35}. Golem currently implements six model-checking algorithms to solve the CHC satisfiability problem.
+Golem\cite{blicha_golem_2023} is one such solver, which integrates the interpolating SMT solver OpenSMT\cite{10.1007/978-3-319-40970-2_35}. Golem currently implements six model-checking algorithms to solve the CHC satisfiability problem.
 
-On top of solving the CHC satisfiability problem, each engine in Golem provides a validity witness for their answer. In software verification we can think of these witnesses as invariants for SAFE answers and counterexample path for UNSAFE answer. By providing these witnesses, we can ensure that the engines answer is correct. Also to check, wheter the engine doesn't give false witnesses, Golem has built in an internal validator to verify the correctness of the witness. 
+On top of solving the CHC satisfiability problem, each engine in Golem provides a validity witness for their answer. In software verification we can think of these witnesses as invariants for SAFE answers and a path to a counterexample for UNSAFE answer. By providing these witnesses, we can ensure that the engines answer is correct. Also to check, wheter the engine doesn't give false witnesses, Golem has built in an internal validator to verify the correctness of the witness. 
 
-Describe PDKIND
+One such algorithm, that can be used to solve these problems is PDKind (Property-Directed K-induction)\cite{7886665}. PDKind is an IC3\cite{6148908}-based algorithm, that separates reachability checking and induction reasoning, allowing to replace the induction core with k-induction.
 
 \section{Goals}
-\noindent Our goal in this work is to 
+\noindent The goal of this work is to create a PDKind engine and integrate it into the Golem Horn Solver\cite{blicha_golem_2023}. 
+
+We will start with defining the background around SMT solving. Then, we will introduce the Golem solver and analyze the PDKind algorithm to design a solution that integrates the PDKind algorithm as an engine into the Golem solver. Afterward, we will implement this design and add the generation of validity witnesses to the implementation. We will test the correctness and efficiency of the implementation using a set of benchmarks and compare the results with other engines. The correctness of the witnesses will be verified using a set of tests that utilize an internal function of the Golem solver, which can verify the correctness of the witnesses.
+

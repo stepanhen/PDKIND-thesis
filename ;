@@ -1,0 +1,56 @@
+\chapter{Implementation}
+\noindent In this chapter, we will be covering the implementation of our solution in more detail. We will analyze the structure, the individual parts of the program and decisions that had to be made. We will also describe the integration of the engine into the Golem solver.
+
+Describe the API, the main functions of the engine, its structure and how we used other parts of Golem.
+\section{Data structures}
+\subsection{Golem structures}
+The main data structure used in Golem is PTRef from OpenSMT. PTRef is a reference structure that points to another structure, representing a single term in a formula called PTerm. PTRef is just a number as an identifier to differentiate between the terms. The mapping between PTRef and PTerms is handled by the Logic class, respectively, one of its implementations. The Logic class keeps a mapping table between the PTRef and PTerm. It also provides methods that we can use to create new terms. Each implementation of the Logic class also has functions according to the theory it uses. In our solution, we use the QF\_LRA theory. Therefore, we will be using this theory in the OpenSMT too. 
+
+We don't need to delve into much more detail here because, in our solution, we will be directly using only PTRef and some basic functions of the Logic class, shown in Figure.
+
+
+\begin{figure}[h]
+\begin{lstlisting}[language=Lisp]
+PTRef x = logic.mkIntVar("x");
+PTRef y = logic.mkIntVar("y");
+
+PTRef formula = logic.mkAnd(
+                  logic.mkEq(x, logic.getTerm_IntOne),
+                  logic.mkEq(
+                    y, 
+                    (logic.mkPlus(x, logic.getTerm_IntOne)))
+                            );
+\end{lstlisting}
+\caption{PTRef and Logic usage example}
+\end{figure}
+
+
+\subsection{PDKind structures}
+Create a diagram of the engines structures and how they communicate, also add the opensmt solver
+
+\subsubsection{Reachability frames}
+Consider adding a code of the RFrames.
+
+\subsubsection{Induction frame}
+Consider adding a code of the Induction Frame
+
+\section{Reachability class}
+Consider adding a code of the Reachability class
+
+Mention that Reachability class could have its own file, but we respect the strcuture of Golem an we put it all in the engine file.
+
+\subsection{reachable}
+Break down the code of the function and analyze the decisions.
+\subsection{checkReachability}
+Break down the code of the function and analyze the decisions.
+\subsection{generalize}
+Break down the code of the function and analyze the decisions.
+
+\section{PD-Kind engine}
+
+\subsection{solve}
+Break down the code of the function and analyze the decisions.
+\subsection{push}
+Break down the code of the function and analyze the decisions.
+
+

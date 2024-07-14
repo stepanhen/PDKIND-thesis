@@ -1,23 +1,297 @@
 \chapter{Implementation}
+\noindent In this chapter, we will be covering the implementation of our solution in more detail. We will analyze the structure, the individual parts of the program and decisions that had to be made. We will also describe the integration of the engine into the Golem solver.
 
-Describe the API, the main functions of the engine, its structure and how we used other parts of Golem.
-
-
-
-\section{Reachability class}
-\subsection{reachable}
-\subsection{checkReachability}
-
-
-\section{PD-Kind engine}
-
-\subsection{solve}
-\subsection{push}
-\subsection{generalize}
+To keep the Golem's structure of engines, we put our solution in files 
+\texttt{PDKind.cpp} and \texttt{PDKind.h} and didn't create separate files for each part of the solution.
 
 \section{Data structures}
+\noindent In this section, we will describe the most used data structures in our solution. 
+\subsection{Golem structures}
 
-\subsection{Reachability frame}
+\subsubsection{PTRef}
+\noindent The main data structure used in Golem is \texttt{PTRef} from OpenSMT. \texttt{PTRef} is a reference structure that points to another structure, representing a single term in a formula called \texttt{PTerm}. \texttt{PTRef} is just a number as an identifier to differentiate between the terms. The mapping between \texttt{PTRef} and \texttt{PTerm} is handled by the \texttt{Logic} class, respectively, one of its implementations. The \texttt{Logic} class keeps a mapping table between the \texttt{PTRef} and \texttt{PTerm}. It also provides methods that we can use to create new terms. Each implementation of the \texttt{Logic} class also has functions according to the theory it uses. In our solution, we use the QF\_LRA theory. Therefore, we will be using this theory in the OpenSMT too. 
 
-\subsection{Induction frame}
+We don't need to delve into much more detail here because, in our solution, we will be directly using only \texttt{PTRef} and some basic functions of the \texttt{Logic} class, shown in Figure \ref{ex:PTref}.
+
+\renewcommand{\figurename}{Figure}
+\lstset{style=cppstyle}
+\begin{figure}[h]
+\begin{lstlisting}
+PTRef x = logic.mkIntVar("x");
+PTRef y = logic.mkIntVar("y");
+
+PTRef formula = logic.mkAnd(
+    logic.mkEq(x, logic.getTerm_IntOne),
+    logic.mkEq(y, (logic.mkPlus(x, logic.getTerm_IntOne))));
+\end{lstlisting}
+\caption{PTRef and Logic usage example}\label{ex:PTref}
+\end{figure}
+The first two lines initiate \texttt{x} and \texttt{y} as an integer variable. On the fourth line, we use the \texttt{Logic} class to create formulas $(x = 1)$ and $(y = x + 1)$, and then we use it again to get a conjunction of these formulas and store it in the \texttt{PTRef formula}.
+
+\subsubsection{MainSolver}
+\noindent Another structure that we will use is the \texttt{MainSolver} class from OpenSMT. \texttt{MainSolver} will serve us as the main solver for satisfiability checking, model generation, and interpolation. The solver is initialized with a config.
+
+In the config, we can, for example, specify, if we need to generate interpolants because the solver only produces models by default. In Figure \ref{ex:MainSolver}, we can see an example of the \texttt{MainSolver} usage with model generation and interpolation.
+
+\begin{figure}[h]
+\begin{lstlisting}
+SMTConfig config;
+config.setOption(SMTConfig::o_produce_inter, SMTOption(true), "ok");
+config.setSimplifyInterpolant(4);
+
+MainSolver solver (logic, config, "Example solver");
+solver.insertFormula(A);
+solver.insertFormula(B);
+solver.insertFormula(C);
+
+sstat result = solver.check();
+if(result == s_True) {
+    std::unique_ptr<Model> model = solver.getModel();
+    // Do something with the model...
+} else {
+    auto itpContext = solver.getInterpolationContext();
+    vec<PTRef> itps;
+    int mask = 3;
+    itpContext->getSingleInterpolant(itps, mask);
+    assert(itps.size() == 1);
+    PTRef interpolant = itps[0];
+    // Do something with the interpolant...
+}
+\end{lstlisting}
+\caption{MainSolver usage example}\label{ex:MainSolver}
+\end{figure}
+On lines 1-3, we initialize the config for the solver. The function on line number 3 chooses an interpolating algorithm with the value 4. On lines 5-8, we initiate the solver and insert three formulas, A, B, and C. Lines 10-13 are pretty simple. We call the \texttt{check()} procedure, and if the result is \texttt{s\_True}, we get the model.
+
+Othwerwise, we can get the interpolant. The crucial part is choosing the correct mask. The mask represents which formulas in the solver should be included in the interpolation. In the binary representation of the mask, the i-th bit corresponds to an i-th formula in the solver frame. A bit of value 1 includes the corresponding formula, and 0 doesn't. In our case, the mask is equal to 3 (in binary 011). Therefore, we will create an interpolant of $A \wedge B$ because we include A and B and exclude C.
+
+
+\subsection{PDKind structures}
+
+
+\subsubsection{Reachability frames}
+\noindent As mentioned in the paper\cite{7886665}, we need to create a structure that can hold formulas that represent k-reachable states from the initial states for all $k \in \{1,\dots,n\}$. We also need to be able to access the k-reachable formula with the argument \texttt{k} and update the formula. To do that, we create a structure \texttt{RFrames}, which keeps a vector \texttt{r} of formulas \texttt{PTRef}, where $r[i] := i$-reachable states from initial states. 
+
+Inserting a formula \texttt{f} is creating a conjunction of \texttt{f} and \texttt{r[i]} and storing it in \texttt{r[i]}. As shown in Figure \ref{code:RFrames}, we overloaded the \texttt{[]} operator to allow quick access to the vector. Also, if \texttt{r[i]} doesn't exist, we fill the vector from \texttt{r.size()} up to \texttt{i} with the term \texttt{true}. Before updating the i-th frame, the insert method fills up the vector too, if \texttt{r[i]} doesn't exist.
+
+\begin{figure}[H]
+\begin{lstlisting}
+class RFrames {
+    std::vector<PTRef> r;
+    Logic & logic;
+public:
+    RFrames(Logic & logic) : logic(logic) {}
+
+    PTRef operator[] (size_t i) {
+        if (i >= r.size()) {
+            while (r.size() <= i) {
+                r.push_back(logic.getTerm_true());
+            }
+        }
+        return r[i];
+    }
+
+    void insert(PTRef fla, size_t k) {
+        if (k >= r.size()) {
+            while (r.size() <= k) {
+                r.push_back(logic.getTerm_true());
+            }
+        }
+        PTRef new_fla = logic.mkAnd(r[k], fla);
+        r[k] = new_fla;
+    }
+};
+\end{lstlisting}
+\caption{RFrames structure}\label{code:RFrames}
+\end{figure}
+
+
+\subsubsection{Induction frame}
+\noindent The induction frame is another structure mentioned in the paper\cite{7886665} and defined in the section \ref{def:IFrame}. In our solution, we will use \texttt{InductionFrame} as a set of \texttt{IFrameElement}. 
+
+The \texttt{IFrameElement} is a structure holding a \texttt{PTRef lemma} and a \texttt{CounterExample counter\_example}. In our solution, we keep the \texttt{counter\_example} in a \texttt{CounterExample} structure instead of the \texttt{PTRef} because we need to store other data along with the formula. In the \texttt{CounterExample} structure, we hold the \texttt{PTRef counter\_example} formula and also a number of steps needed to reach the \texttt{counter\_example} from the initial states. We keep this information for the production of the unsatisfiability witness.
+
+
+
+\section{PDKind architecture}
+
+\noindent In this section, we will describe the functions of the PDKind engine and how they interact together with the OpenSMT solver, as shown in Figure \ref{fig:pdkind_diagram}.
+
+
+
+\begin{figure}[H]
+    \centering
+\begin{tikzpicture}[node distance=1cm]
+
+% Nodes% Define styles for the large and small rectangles
+\tikzstyle{largest}=[rectangle, draw, minimum width=6cm, minimum height=4cm]
+\tikzstyle{large}=[rectangle, draw, minimum width=5cm, minimum height=4cm]
+\tikzstyle{small}=[rectangle, draw, minimum width=1.5cm, minimum height=1cm]
+
+% Draw the large rectangles
+\node[large, label={above:PDKind}] (PDKind) at (0, 0) {};
+\node[largest, label={above:ReachabilityChecker}] (ReachabilityChecker) at (7, 0) {};
+
+% Draw the small rectangles inside PDKind
+\node[small] (PDK1) at (-1, -0.75) {push};
+\node[small] (PDK2) at (1, -0.75) {solve};
+
+% Draw the small rectangles inside ReachabilityChecker
+\node[small] (RC1) at (5.75, -0.75) {generalize};
+\node[small] (RC2) at (8.25, -0.75) {reachable};
+\node[small] (RC3) at (7,1) {checkReachability};
+
+\node[decision] (OpenSMT) at (3.25,-4) {OpenSMT};
+
+
+\draw [thick,->,>=stealth, color=blue] (8.25, -1.25) |- (8.25, -4) -- (OpenSMT);
+\draw [thick,->,>=stealth, color=blue] (5.75, -1.25) |- (5.75, -4) -- (OpenSMT);
+
+
+\draw [thick,->,>=stealth, color=blue] (RC2) -- (RC1) ;
+\draw [thick,->,>=stealth, color=blue] (-1, -0.25) |- (-1, 1) -- (RC3);
+\draw [thick,->,>=stealth, color=blue] (-1, -0.25) |- (-1, 1) -- (4.375, 1) -| (4.375, -0.75) -- (4.75, -0.75);
+\draw [thick,->,>=stealth, color=blue] (RC3) -- (9.625,1) -| (9.625, -0.75) -- (9.25, -0.75) ;
+
+\draw [thick,->,>=stealth, color=blue] (PDK1) |- (-1, -4) -- (OpenSMT);
+
+\draw [thick,->,>=stealth, color=blue] (1.75, -0.75) |- (3.25, -0.75) -- (OpenSMT);
+\draw [thick,->,>=stealth, color=blue] (PDK2) -- (PDK1) ;
+
+\end{tikzpicture}
+\caption{Architecture of PDKind engine}
+    \label{fig:pdkind_diagram}
+\end{figure}
+
+\subsection{ReachabilityChecker class}
+\begin{figure}[H]
+\begin{lstlisting}
+class ReachabilityChecker {
+private:
+    RFrames r_frames;
+    Logic & logic;
+    TransitionSystem const & system;
+    std::tuple<bool, PTRef> reachable(unsigned k, PTRef formula);
+public:
+    ReachabilityChecker(Logic & logic, TransitionSystem const & system) : r_frames(logic), logic(logic), system(system) {}
+    std::tuple<bool, int, PTRef> checkReachability(int from, int to, PTRef formula);
+    PTRef generalize(Model & model, PTRef transition, PTRef formula);
+};
+\end{lstlisting}
+\caption{ReachabilityChecker class}\label{code:ReachClass}
+\end{figure}
+The \texttt{ReachabilityChecker} class encapsulates the mechanism needed for reachability checking.
+\noindent As we analyzed in Section \ref{RFrames}, using the structure \texttt{RFrames} wouldn't be efficient. Therefore, we keep one instance of the \texttt{RFrames} in the \texttt{ReachabilityChecker} and use it for all the reachability checks. 
+
+The \texttt{ReachabilityChecker} class could have its file, but we respect the structure of Golem, and we put it in the engine file together with other code.
+\subsubsection{reachable}
+The \texttt{reachable(unsigned k, PTRef formula)} function is the core of the \texttt{ReachabilityChecker} class. The function implements the pseudocode shown in Algorithm \ref{alg:1}. But for the function to work correctly with the rest of the engine, we need to modify it.
+
+At first, we also need to return a formula with the reachability result. If the \texttt{reachable()} function ends up \texttt{False}, we ask the solver to produce an interpolant and return it with the \texttt{False} result. Otherwise, we return \texttt{True} and a false term.
+
+To produce the interpolants, we must set up a config at the beginning of the function. Later, we will use that config to initialize solvers for satisfiability checking and interpolant production. 
+
+The first such solver is used to check whether the given formula holds in the initial states if the given \texttt{k} is equal to 0. If the check gives us a false result, we continue to produce the interpolant. We do that the way as shown in Figure \ref{ex:MainSolver} but, we will use \texttt{mask = 1} because we don't insert the transition formula into the solver and therefore we only have $A \wedge B$ and want to interpolate $A$. 
+
+If the given \texttt{k} is greater than zero, we can begin with the while loop. Before that, we need to change the version of the given \texttt{formula} from 0 to 1. To achieve that, we will use a \texttt{TimeMachine} and its function \texttt{sendFlaThroughTime(PTRef fla, int steps)}, which takes the \texttt{formula} and increases its version by the \texttt{steps} number.
+
+It's important to maintain this versioning because we are verifying if the \texttt{formula} can be reached with a single transition from a certain RFrame. For this reason, the formulas added to the solver must have the structure of $(R[k-1]_0 \wedge T_{0,1} \wedge formula_1)$. We'll later observe that every \texttt{R[i]} is consistently versioned to 0.
+
+In Section \ref{Explain}, we have already analyzed that the \texttt{Explain()} method on line 13 in Algorithm \ref{alg:1} is omitted, and instead, we obtain the interpolant from the \texttt{Reachable()} function, called on line 10.
+
+The pseudocode currently concludes after completing these steps, but an additional task remains: generating the interpolant. So far, we have only generated the interpolant for cases where \texttt{k = 0}. Now, let's describe how to generate the interpolant for other cases. In the while loop, if the solver check fails, we can ask the solver to produce an interpolant in the same form as shown in Figure \ref{ex:MainSolver}. However, it's important to use the \texttt{TimeMachine} to send the interpolant back by one step, ensuring it has version 0. This is consistent with our earlier observation that each \texttt{R[i]} has version 0, and the interpolant will be utilized to create or update the \texttt{R[i]}. But this doesn't create the complete interpolant yet. We also need to verify whether the given \texttt{formula} holds in the initial states. If it does, we can return the interpolant. If not, we need to create an interpolant for the initial states in the same way as we did at the beginning of this function when \texttt{k = 0}. Afterward, we combine the two interpolants and return their disjunction.
+
+\subsubsection{checkReachability}
+
+\noindent As we already analyzed in Section \ref{Push}, the Push procedure requires the \texttt{reachable()} function to check the reachability in a range of steps instead of a certain number of steps. To achieve this, we establish an additional function that takes a range of steps \texttt{(k\_from, k\_to)} and iterates through the \texttt{reachable()} function using a for loop from \texttt{k\_from} to \texttt{k\_to}. This function returns the first positive outcome \texttt{(True)} or the result of the last unsuccessful call, along with the number of steps used in the most recent \texttt{reachable()} function call.
+
+\subsubsection{generalize}
+
+\noindent This function is an implementation of the pseudocode described in Algorithm \ref{alg:2}. It utilizes the \texttt{ModelBasedProjection} class in Golem to eliminate non-state variables from a formula.
+
+Even though the \texttt{generalize()} method is utilized not only by the \texttt{reachable()} function but also by the \texttt{push()} procedure, we chose to keep it in the \texttt{ReachabilityChecker} class. This decision was made because this class is already responsible for generating interpolants, i.e., explanations, so it made sense to also handle the production of generalizations.
+
+\subsection{PD-Kind engine}
+\noindent The \texttt{PDKind} class inherits from the \texttt{Engine} class in Golem. The \texttt{Engine} class contains one virtual method \texttt{solve(ChcDirectedHyperGraph const \& graph)}. In our engine, we need to override this method to solve the transition system using the PDKind algorithm. This method accepts a hypergraph that needs to be solved as a parameter. First, we need to convert the hypergraph to a normal graph. To solve the normal graph, we can overload the \texttt{solve(ChcDriectedGraph const \& system)} function to work with the normal graph. Within the overloaded function, we can check if the graph is trivial and utilize Golem's \texttt{Common} class to solve it using the \texttt{solveTrivial()} function. If the graph is non-trivial, we then transform it into a transition system and call PDKind's \texttt{solveTransitionSystem(TransitionSystem const \& system)} to apply the PDKind algorithm and solve the system.
+
+\subsubsection{solveTransitionSystem}
+
+\noindent This function accepts the parameter \texttt{TransitionSystem const \& system}, which provides access to the initial states, transition states, and query. The query represents the bad states that we want to avoid in the provided transition system. The goal is either to construct an inductive invariant that guarantees the satisfiability of the transition system or to construct a path to the counterexample that proves the unsatisfiability of the system. The property to which we want to generate the inductive invariant is the negation of the query.
+
+This function implements the pseudocode shown in Algorithm \ref{alg:4}. Before the main solving process starts, we need to use the \texttt{MainSolver} to check if the initial states are empty, which would result in the \texttt{SAFE} answer, and to check if the property holds in the initial states, which would result in the \texttt{UNSAFE} answer.
+
+After this part, the implementation pretty much follows the pseudocode. The only difference here is that in our implementation, we need to process the additional data we get from the \texttt{push()} procedure, and that is the validity witness information. For satisfiability witness, we take the \texttt{InductionFrame} from the last \texttt{push()} procedure and first turn it into a k-inductive invariant and then utilize Golem's function \texttt{kinductiveToInductive()} to turn it into an inductive invariant. For the unsatisfiability witness, we get the \texttt{steps\_to\_ctx} number from the \texttt{push()} procedure and store it as an unsatisfiability witness into the \texttt{TransitionSystemVerificationResult} and return it.
+
+\subsubsection{push}
+
+\noindent The \texttt{push()} procedure which implements the Algorithm \ref{alg:3} is the core of our solution. It connects all parts of our engine together to produce some inductive strengthening or find a counterexample.  
+
+
+In the code snippet in Figure \ref{code:TransitionGen}, we show how we created the transition $T[F_{ABS}]^k$ which satisfies the definition shown in section \ref{ReachabilityChecking} .
+
+We utilize the \texttt{TimeMachine} and \texttt{Logic} structures to generate a conjunction of transitions $t_{0,1} \wedge t_{1,2} \wedge \dots \wedge t_{k-1, k}$, with versions ranging from 0 to k-1. Additionally, we create a conjunction of formulas $f\_abs_0 \wedge f\_abs_1 \wedge \dots \wedge f\_abs_{k-1}$, also versioned from 0 to k-1. Finally, we make a conjunction of these two conjunctions to obtain the final transition formula.
+
+\begin{figure}[H]
+\begin{lstlisting}
+PTRef t_k = transition;
+PTRef f_abs_conj = logic.getTerm_true();
+std::size_t i;
+for (i = 1; i < k; ++i) {
+    PTRef versionedFla = tm.sendFlaThroughTime(iframe_abs, i);
+    PTRef versionedTransition = tm.sendFlaThroughTime(transition, i)
+    t_k = logic.mkAnd(t_k, versionedTransition);
+    f_abs_conj = logic.mkAnd(f_abs_conj, versionedFla);
+}
+
+PTRef t_k_constr = logic.mkAnd(t_k, f_abs_conj);
+\end{lstlisting}
+\caption{Transition creation}\label{code:TransitionGen}
+\end{figure}
+
+
+The rest of the implementation follows the pseudocode but, we added some parts to enable the witness production. 
+
+First, we needed to extend the return values by an additional value, which represents the number of steps to a counterexample. The \texttt{push()} procedure returns five different values. For clarity, we encapsulated these values in a structure called \texttt{PushResult}, as illustrated in Figure \ref{code:PushResult}.
+
+\begin{figure}[H]
+\begin{lstlisting}
+struct PushResult {
+    InductionFrame i_frame;
+    InductionFrame new_i_frame;
+    int n;
+    bool is_invalid;
+    int steps_to_ctx;
+    PushResult(InductionFrame i_frame,
+               InductionFrame new_i_frame,
+               int n,
+               bool is_invalid,
+               int steps_to_ctx) { ... }
+};
+\end{lstlisting}
+\caption{PushResult structure}\label{code:PushResult}
+\end{figure}
+
+In the next step, we must update the \texttt{steps\_to\_ctx} value, which has been set to 0 during the initialization. This update occurs in the same part of the code where we set the \texttt{isInvalid} flag to \texttt{True}. The new value of \texttt{steps\_to\_ctx} will be the sum of the number of steps required to reach the counterexample from \texttt{g\_cex} (i.e., \texttt{g\_cex.num\_of\_steps}) and a number \texttt{k} returned by the \texttt{CheckReachability()} function. This \texttt{k} tells us that \texttt{g\_cex} is k-reachable from the initial states. Thus, the final value of \texttt{steps\_to\_ctx} will be \texttt{g\_cex.num\_of\_steps + k}.
+
+Finally, we need to correctly assign the previously used value \texttt{num\_of\_steps} for each newly created counterexample. We already analyzed in section \ref{UNSATWit} that a new counterexample is only generated once.. This process is displayed in a code snippet in Figure \ref{code:CEX}. 
+
+The new counterexample arises as a generalization of the previous potential counterexample, with its version incremented by \texttt{k}.  Therefore, the value of \texttt{num\_of\_steps} will be the same as the \texttt{num\_of\_steps} of the previous potential counterexample, incremented by \texttt{k}.
+
+\begin{figure}[H]
+\begin{lstlisting}
+PTRef f_cex = tm.sendFlaThroughTime(obligation.counter_example.ctx, i);
+MainSolver solver2(logic, config, "f_cex reachability");
+solver2.insertFormula(iframe_abs);
+solver2.insertFormula(t_k_constr);
+solver2.insertFormula(f_cex);
+auto res2 = solver2.check();
+if (res2 == s_True) {
+    auto model2 = solver2.getModel();
+    CounterExample g_cex(reachability_checker.generalize(*model2, t_k, f_cex), obligation.counter_example.num_of_steps + k);
+\end{lstlisting}
+\caption{CounterExample initialization}\label{code:CEX}
+\end{figure}
+
+
+
+At last, we have to make a minor adjustment. In the pseudocode, the model is obtained directly from the \texttt{CheckSAT()} command, but in our implementation, we should only request the solver to provide the model if we have verified that the result of \texttt{CheckSAT()} was positive. Thus, we ask the solver for a model after an if statement in which we verify the satisfiability.
 
