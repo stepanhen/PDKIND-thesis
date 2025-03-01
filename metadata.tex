@@ -15,31 +15,31 @@
 
 % Thesis title in English (exactly as in the official assignment)
 % (Note: \xxx is a "ToDo label" which makes the unfilled visible. Remove it.)
-\def\ThesisTitle{\xxx{The PD-KIND algorithm in the Golem SMT solver}}
+\def\ThesisTitle{The PD-KIND algorithm in the Golem SMT solver}
 
 % Author of the thesis (you)
-\def\ThesisAuthor{\xxx{Štěpán Henrych}}
+\def\ThesisAuthor{Štěpán Henrych}
 
 % Year when the thesis is submitted
-\def\YearSubmitted{\xxx{2024}}
+\def\YearSubmitted{2024}
 
 % Name of the department or institute, where the work was officially assigned
 % (according to the Organizational Structure of MFF UK in English,
 % see https://www.mff.cuni.cz/en/faculty/organizational-structure,
 % or a full name of a department outside MFF)
-\def\Department{\xxx{Department of Distributed and Dependable Systems}}
+\def\Department{Department of Distributed and Dependable Systems}
 
 % Is it a department (katedra), or an institute (ústav)?
-\def\DeptType{\xxx{Department}}
+\def\DeptType{Department}
 
 % Thesis supervisor: name, surname and titles
-\def\Supervisor{\xxx{doc. RNDr. Jan Kofroň, Ph.D.}}
+\def\Supervisor{doc. RNDr. Jan Kofroň, Ph.D.}
 
 % Supervisor's department (again according to Organizational structure of MFF)
-\def\SupervisorsDepartment{\xxx{Department of Distributed and Dependable Systems}}
+\def\SupervisorsDepartment{Department of Distributed and Dependable Systems}
 
 % Study programme (does not apply to rigorosum theses)
-\def\StudyProgramme{\xxx{Informatika}}
+\def\StudyProgramme{Informatika}
 
 % An optional dedication: you can thank whomever you wish (your supervisor,
 % consultant, who provided you with tea and pizza, etc.)
@@ -49,19 +49,12 @@
 
 % Abstract (recommended length around 80-200 words; this is not a copy of your thesis assignment!)
 \def\Abstract{%
-\xxx{Use the most precise, shortest sentences that state what problem the
-thesis addresses, how it is approached, pinpoint the exact result achieved, and
-describe the applications and significance of the results. Highlight anything
-novel that was discovered or improved by the thesis. Maximum length is 200
-words, but try to fit into 120. Abstracts are often used for deciding if
-a reviewer will be suitable for the thesis; a well-written abstract thus
-increases the probability of getting a reviewer who will like the thesis.}
+PDKind (Property-Directed K-induction) is a combination of IC3 and k-induction, both commonly used model checking algorithms. PDKind separates reachability checking from induction reasoning, allowing induction to be replaced by k-induction. This work focuses on analysing and implementing the PDKind algorithm in the Golem solver as a back-end engine. By integrating PDKind into Golem, our goal is to take advantage of its unique approach to improve the solver's effectiveness in handling various verification tasks. The implementation will be tested and compared to other engines within Golem on a set of benchmarks to demonstrate its comparable efficiency.
 }
-
 % 3 to 5 keywords (recommended) separated by \sep
 % Keywords are useful for indexing and searching for the theses by topic.
 \def\ThesisKeywords{%
-\xxx{keyword\sep key phrase}
+PDKind \sep Golem \sep Model checking
 }
 
 % If any of your metadata strings contains TeX macros, you need to provide
@@ -80,15 +73,15 @@ increases the probability of getting a reviewer who will like the thesis.}
 % If you are studing in a Czech programme, you also need to provide metadata in Czech:
 % (in English programmes, this is not used anywhere)
 
-\def\ThesisTitleCS{\xxx{Algoritmus PD-KIND v řešiči Golem}}
-\def\DepartmentCS{\xxx{Katedra distribuovaných a spolehlivých systémů}}
-\def\DeptTypeCS{\xxx{Katedra}}
-\def\SupervisorsDepartmentCS{\xxx{Katedra distribuovaných a spolehlivých systémů}}
-\def\StudyProgrammeCS{\xxx{Informatika}}
+\def\ThesisTitleCS{Algoritmus PD-KIND v řešiči Golem}
+\def\DepartmentCS{Katedra distribuovaných a spolehlivých systémů}
+\def\DeptTypeCS{Katedra}
+\def\SupervisorsDepartmentCS{Katedra distribuovaných a spolehlivých systémů}
+\def\StudyProgrammeCS{Informatika}
 \def\ThesisKeywordsCS{%
-\xxx{klíčová slova\sep klíčové fráze}
+PDKind \sep Golem \sep Model checking
 }
 
 \def\AbstractCS{%
-\xxx{Abstrakt práce přeložte také do češtiny.}
+PDKind (Property-Directed K-induction) je kombinací IC3 a k-indukce, obou běžně používaných algoritmů pro model checking. PDKind odděluje ověření dosažitelnosti od indukčního odůvodňování, což umožňuje nahradit indukci k-indukcí. V této práci se zaměřujeme na analýzu a implementaci algoritmu PDKind jako back-endovém enginu v řešiči Golem. Integrací PDKind do Golemu chceme využít jeho jedinečný přístup ke zlepšení efektivity řešiče při řešení různých verifikačních úloh. Implementace bude testována a porovnána s ostatními enginy řešiče Golem na sadě benchmarků, aby se prokázala její srovnatelná účinnost.
 }

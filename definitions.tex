@@ -18,44 +18,154 @@
 
 \vspace{\baselineskip}Let us have a transition system and property $P$, then $P$ is invariant if all states reachable in the system satisfy it. Otherwise, there exists a trace to a counterexample $\neg P$.
 
+\section{Safety of transition system}
+\xxx{TODO}
 
 \section{Satisfiability Modulo Theories}
-\noindent In logic and computer science, the Boolean satisfiability problem, also called SAT, is one of the most well-known problems. In 1971, it was proven to be the first NP-complete problem  \cite{10.1145/800157.805047}. This greatly helped in the field of complexity theory by providing a tool for the classification of other computational problems. SAT is widely used, but there are cases where it is not possible to represent a problem using only the two Boolean values, true and false.
+\noindent In logic and computer science, the Boolean satisfiability problem,
+also called SAT, is one of the most well-known problems. In 1971, it was proven
+to be the first NP-complete problem  \cite{10.1145/800157.805047}. This greatly
+helped in the field of complexity theory by providing a tool for the
+classification of other computational problems. SAT is widely used, but there
+are cases where it is not possible to represent a problem using only the two
+Boolean values, true and false.
 
-This led to the generalization of SAT to more complex formulas, which can include real numbers, integers, or even lists and other data structures. In other words, an SMT instance arises as a generalization of SAT instance, where Boolean variables are replaced with predicates of some theory. Examples of such theories are uninterpreted functions (UF), arrays or linear arithmetics (LA), or, more specifically, linear real arithmetics (LRA), which we will focus on in the rest of this work.
+This led to the generalization of SAT to more complex formulas, which can
+include real numbers, integers, or even lists and other data structures. In
+other words, an SMT instance arises as a generalization of SAT instance, where
+Boolean variables are replaced with predicates of some theory. Examples of such
+theories are uninterpreted functions (UF), arrays or linear arithmetics (LA),
+or, more specifically, linear real arithmetics (LRA), which we will focus on in
+the rest of this work.
+
+\section{CHC Satisfiability}
+\noindent Constrained Horn Clauses (CHCs) are a fragment of First Order Logic
+modulo constraints that captures many program verification problems as
+constraint solving.
+
+\vspace{\baselineskip}\noindent
+They extend Horn Clauses, which are logical formulas of the form:
+
+\begin{equation}
+    P_{1} \land P_{2} \land \dots \land P_{n} \implies H
+\end{equation}
+where $P_i$ are body literals and $H$ is the head of the clause. 
+
+\vspace{\baselineskip}
+In CHCs, the literals in the body can include constraints in a first order theory, such as linear arithmetics, boolean logic etc.
+Therefore CHC is a formula of the form:
+\begin{equation}
+    \phi \land P_{1} \land P_{2} \land \dots \land P_{n} \implies H
+\end{equation}
+where $\phi$ is a constraint in the first order theory, $P_i$ and $H$ are uninterpreted predicates. 
+
+\vspace{\baselineskip}\noindent
+A CHC is satisfiable if there exists an interpretation of the uninterpreted predciates $P_i$ and $H$ that is valid in the background theory.
+
+\vspace{\baselineskip}\noindent
+For example, we consider a program with a loop:
+
+\vspace{\baselineskip}
+\begin{figure}[h]
+\begin{mdframed}
+\begin{lstlisting}
+int i = 10;
+
+while (x > 0) {
+    x = x - 1;
+}
+
+assert (x >= 0);
+\end{lstlisting}
+\end{mdframed}
+\end{figure}
+
+We can encode the behavior and safety of this program in CHCs:
+
+\vspace{\baselineskip}
+\textbf{Initial clause:}
+\begin{equation}
+    x = 10 \implies P(x)
+\end{equation}
+
+\vspace{\baselineskip}
+\textbf{Transition clause:}
+\begin{equation}
+    x > 0 \land P(x) \land x' = x - 1 \implies P(x')
+\end{equation}
+
+\vspace{\baselineskip}
+\textbf{Terminal clause:}
+\begin{equation}
+    x < 0 \land P(x) \implies False
+\end{equation}
+
+In this simple example, we encoded the program in three clauses. The initial
+clause describes the initial states of the program and implies an uninterpreted
+predicate $P(x)$ which is the loop invariant. The transition clause describes one
+transition step of the loop which consists of checking, whether $x$ satisfies the
+loop condition $x > 0$ and the invariant $P(x)$, and decrementing $x$. Satisfiability
+of the left hand side implies the invariant $P(x')$ for the newly decremented $x$.
+At last, in the terminal clause, we need to check whether the assertion
+condition is met. We achieve this by checking for the negation of the assert.
+Satisfiability of such negation implies a false state.
+
+The compact representation of a loop in CHCs is:
+
+\vspace{\baselineskip}
+\begin{equation}
+    Init(V) \implies Inv(V)
+    Inv(V) \land Tr(V, V') \implies Inv(V')
+    Inv(V) \land Bad(V) \implies False
+\end{equation}
+
+With this approach, we can encode even more complex and less deterministic loops. To get some finite trace of the loop, we need to unroll it some $k$ times.
+
+\vspace{\baselineskip}
+\begin{equation}
+    Init(V) \land Tr(V, V^2) \dots \land Tr(V^{k-1}, V^k) \land Bad(V^k)
+\end{equation}
+
+
+The main advantage of CHC is that it separates modeling
+from solving by translating the program’s behavior and properties into
+constrained language and then using a specialized CHC solver to solve various
+verification tasks across programming languages by deciding the satisfiability
+problem of a CHC system. 
+
 \section{OpenSMT}
 \noindent OpenSMT\cite{10.1007/978-3-642-12002-2_12} is an open-source SMT solver developed by the Formal Verification and Security Lab based at the University of Lugano. It includes a parser for SMT-LIB\cite{BarFT-SMTLIB} language, a state-of-the-art SAT-Solver, and a clean interface for new theory solvers, currently supporting various logics such as QF\_UF, QF\_LIA, QF\_LRA, and more. Currently, there is a second version OpenSMT2\cite{10.1007/978-3-319-40970-2_35}, which supports interpolation for propositional logic, QF\_UF, QF\_LRA, QF\_LIA, and QF\_IDL.
 
 
-\section{SMT-LIB}
-\noindent SMT-LIB\cite{BarFT-SMTLIB} is an international initiative that provides standard descriptions of background theories used in SMT solvers and develops common input and output languages for SMT solvers. It offers a unified framework for the description of SMT problems.  Additionally, SMT-LIB maintains a library of input problems, or benchmarks, written in the SMT-LIB language to support the development of different SMT solvers.
+%\section{SMT-LIB}
+%\noindent SMT-LIB\cite{BarFT-SMTLIB} is an international initiative that provides standard descriptions of background theories used in SMT solvers and develops common input and output languages for SMT solvers. It offers a unified framework for the description of SMT problems.  Additionally, SMT-LIB maintains a library of input problems, or benchmarks, written in the SMT-LIB language to support the development of different SMT solvers.
 
 
-\begin{figure}[h]
-\begin{mdframed}
-\begin{lstlisting}[language=Lisp]
-; Integer arithmetic
-(set-logic QF_LIA)
-(declare-const x Int)
-(declare-const y Int)
+%\begin{figure}[h]
+%\begin{mdframed}
+%\begin{lstlisting}[language=Lisp]
+%; Integer arithmetic
+%(set-logic QF_LIA)
+%(declare-const x Int)
+%(declare-const y Int)
 
-; Assertion
-(assert (= (- x y) (+ x (- y) 1)))
+%; Assertion
+%(assert (= (- x y) (+ x (- y) 1)))
 
-; Check satisfiability
-(check-sat)
+%; Check satisfiability
+%(check-sat)
 
-(exit)
-\end{lstlisting}
-\end{mdframed}
-\caption{SMT-LIB input example}
-\end{figure}
+%(exit)
+%\end{lstlisting}
+%\end{mdframed}
+%\caption{SMT-LIB input example}
+%\end{figure}
 
-In the Figure \ref{ex:ind vs kind} we can see an example of the SMT-LIB input taken from the offical examples of SMT-LIB\cite{BarFT-SMTLIB} .\begin{itemize}
-\item Lines starting with ';' represent comments and are ommited.
-\item \textbf{(set-logic QF\_LIA)}: This command sets the logic to Quantifier-Free Linear Integer Arithmetic (QF\_LIA), which involves linear integer arithmetic expressions without quantifiers.
-\item \textbf{(declare-const x Int) and (declare-const y Int)}: These commands declare two integer constants x and y.
-\item \textbf{(assert (= (- x y) (+ x (- y) 1)))}: This assertion states that $x - y$ should be equal to $x - y + 1$
-\item \textbf{(check-sat)}: This command asks the SMT solver to check the satisfiability of the assertion.
-\item \textbf{(exit)}: This command exits the solver.
-\end{itemize}
+%In the Figure \ref{ex:ind vs kind} we can see an example of the SMT-LIB input taken from the offical examples of SMT-LIB\cite{BarFT-SMTLIB} .\begin{itemize}
+%\item Lines starting with ';' represent comments and are ommited.
+%\item \textbf{(set-logic QF\_LIA)}: This command sets the logic to Quantifier-Free Linear Integer Arithmetic (QF\_LIA), which involves linear integer arithmetic expressions without quantifiers.
+%\item \textbf{(declare-const x Int) and (declare-const y Int)}: These commands declare two integer constants x and y.
+%\item \textbf{(assert (= (- x y) (+ x (- y) 1)))}: This assertion states that $x - y$ should be equal to $x - y + 1$
+%\item \textbf{(check-sat)}: This command asks the SMT solver to check the satisfiability of the assertion.
+%\item \textbf{(exit)}: This command exits the solver.
+%\end{itemize}

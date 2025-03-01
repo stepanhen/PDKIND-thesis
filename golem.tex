@@ -71,16 +71,51 @@ The user can also select the option to produce a validity witness. When the engi
     \caption{UNSAT + Proof example}\label{ex:UNSAT}
 \end{figure}
 
-In Figure \ref{ex:UNSAT}, we have a CHC system and a proof of its unsatisfiability. There are four derivation steps. The first step sets the variable $x$ to $1$ and gets I(1). The second step sets $x := 1$ and $x' := 2$ and gets T(1, 2). Step three applies resolution to the instance of the third clause for $x := 1$ and $x' := 2$ and the previously derived facts L(1) and T(1,2) and gets S(2). The last step again applies resolution to the instance of the fourth clause with $x := 2$ and the derived fact S(2) and gets false. 
+In Figure \ref{ex:UNSAT}, we can see a CHC
+system and a proof of its unsatisfiability. There are four derivation steps. In
+the first step, the unsatisfiability proof shows that the variable $x$ is set
+to $1$, giving us $I(1) \impliedby True$. In the second step, we continue with
+the initial value of $x$ and proceed to get $x' := 2$ which gives us $T(1, 2)
+\impliedby True$. Step three applies resolution to the instance of the third
+clause for $x := 1$ and $x' := 2$ and the previously derived facts $I(1)$ and
+$T(1,2)$, giving us $S(2) \impliedby True$. The last step again applies
+resolution to the instance of the fourth clause with $x := 2$ and the derived
+fact $S(2)$ resulting in $False$ clause. 
+
+Therefore the proof gives us the complete trace from initial states resulting with a false clause.
 
 
 \section{Engine integration}
 \noindent The architecture described above allows us to integrate an engine into the Golem solver without modifying it. There are several ways we can do it. 
 
-Writing a library in a different programming language could be interesting because we could leverage the pros of other languages. The downside is that the interaction of C++ and another language could bring various overheads. Our goal is to create an efficient engine, and therefore, having these overheads would not be optimal.
+Writing a library in a different programming language could be an interesting
+option, as it would allow us to leverage certain advantages of other
+programming languages and make our engine compatible with other solvers and
+verification programs. However, integrating C++ with another language may
+introduce some performance overhead. This overhead could be caused by complex
+data conversions, memory allocation issues, or additional context switching.
+The extent of this overhead depends on how we plan to utilize the library. If
+the library was a standalone engine that received input from Golem and returned
+an SAT result, the overhead would be minimal. However, if we wanted the library to
+interact with Golem more, such as by using its SMT solver or storing additional
+information about the solving process, the performance could degrade. 
 
-Another option would be to write a C++ library and include it in the project. This would eliminate the downsides of the first option, but there would still be some issues. For example, we would have to integrate an SMT solver for satisfiability checking and interpolation. 
+The goal of this work is to create a new efficient engine within the Golem solver and compare its
+performance with other Golem engines. As we said above, using or implementing a different SMT solver and isolating the solving process in a library would not
+bring any noticeable overhead. Therefore it could look like a feasible
+solution. However, choosing this approach would undermine the purpose of this work. We would not be able to compare the performance because the comparison
+of different engines would be affected by the performance of their underlying
+SMT solvers.
 
-The most efficient option is to integrate the engine directly into the solver the same way the other engines are integrated. This would allow us to directly utilize OpenSMT, which is integrated into Golem, for satisfiability checking and interpolation. We could also use many other features that Golem has, making our development easier.
+Another option would be to write a C++ library and include it in the project.
+The big advantage of this solution would be the option of using the engine library
+in other solvers. Using C++ would also eliminate the mentioned downsides of the
+first option, but it would still leave some. For example, to keep the engine
+universal, we must integrate an SMT solver for satisfiability checking
+and interpolation. That, as we have already discussed, would not be an
+optimal solution for the purpose of this work. 
 
+The last option would be to utilize Golem for SMT solving. With this approach, we would use C++ to achieve high performance and we would use Golem's integrated SMT solver to eliminate the above-mentioned disadvantages such as not being able to effectively compare engines with different SMT solvers. On the other hand, such an approach would make our engine usable only for the Golem solver and it could not be used as a standalone engine in other solvers.
+
+The most suitable option for achieving our goal is to integrate the engine directly into the Golem solver, following the approach used for its existing engines. This approach allows us to fully leverage OpenSMT, Golem’s integrated SMT solver, for satisfiability checking and interpolation. Additionally, we can take advantage of other Golem’s built-in features, which would simplify development and improve efficiency. Although this method ties the engine to Golem, it is ideal for the work's goal of developing a high-performance engine for Golem and comparing it against its other engines.
 
