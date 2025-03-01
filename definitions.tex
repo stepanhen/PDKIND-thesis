@@ -62,6 +62,12 @@ where $\phi$ is a constraint in the first order theory, $P_i$ and $H$ are uninte
 \vspace{\baselineskip}\noindent
 A CHC is satisfiable if there exists an interpretation of the uninterpreted predciates $P_i$ and $H$ that is valid in the background theory.
 
+The main advantage of CHC is that it separates modeling
+from solving by translating the program’s behavior and properties into
+constrained language and then using a specialized CHC solver to solve various
+verification tasks across programming languages by deciding the satisfiability
+problem of a CHC system.
+
 \vspace{\baselineskip}\noindent
 For example, we consider a program with a loop:
 
@@ -126,12 +132,8 @@ With this approach, we can encode even more complex and less deterministic loops
     Init(V) \land Tr(V, V^2) \dots \land Tr(V^{k-1}, V^k) \land Bad(V^k)
 \end{equation}
 
+Such unrolled loop is called \textbf{Bounded Model Checking (BMC) formula}. With increasing $k$, we can evaluate more BMC formulas and use them to find more bugs in the system. But to prove that there are no bugs, we need find inductive invariants. In our work, we will use BMC formulas to build such invariants.
 
-The main advantage of CHC is that it separates modeling
-from solving by translating the program’s behavior and properties into
-constrained language and then using a specialized CHC solver to solve various
-verification tasks across programming languages by deciding the satisfiability
-problem of a CHC system. 
 
 \section{OpenSMT}
 \noindent OpenSMT\cite{10.1007/978-3-642-12002-2_12} is an open-source SMT solver developed by the Formal Verification and Security Lab based at the University of Lugano. It includes a parser for SMT-LIB\cite{BarFT-SMTLIB} language, a state-of-the-art SAT-Solver, and a clean interface for new theory solvers, currently supporting various logics such as QF\_UF, QF\_LIA, QF\_LRA, and more. Currently, there is a second version OpenSMT2\cite{10.1007/978-3-319-40970-2_35}, which supports interpolation for propositional logic, QF\_UF, QF\_LRA, QF\_LIA, and QF\_IDL.
