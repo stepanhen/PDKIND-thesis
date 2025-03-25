@@ -6,9 +6,9 @@ One of the frameworks that is becoming popular is the Constrained Horn Clauses (
 
 Golem\cite{blicha_golem_2023} is one such solver, which integrates the interpolating SMT solver OpenSMT\cite{10.1007/978-3-319-40970-2_35}. Golem currently implements six model-checking algorithms to solve the CHC satisfiability problem.
 
-On top of solving the CHC satisfiability problem, each engine in Golem provides a validity witness for their answer. In software verification we can think of these witnesses as invariants for SAFE answers and a path to a counterexample for UNSAFE answer. By providing these witnesses, we can ensure that the engines answer is correct. Also to check, wheter the engine doesn't give false witnesses, Golem has built in an internal validator to verify the correctness of the witness. 
+On top of solving the CHC satisfiability problem, each engine in Golem provides a validity witness for their answer. In software verification we can think of these witnesses as invariants for SAFE answers and a path to a counterexample for UNSAFE answer. By providing these witnesses, we can ensure that the engines answer is correct. Also to check, whether the engine doesn't give false witnesses, Golem has built in an internal validator to verify the correctness of the witness. 
 
-One such algorithm, that can be used to solve these problems is PDKind (Property-Directed K-induction)\cite{7886665}. PDKind is an IC3\cite{6148908}-based algorithm, that separates reachability checking and induction reasoning, allowing the inuduction core to be replaced with k-induction.
+One such algorithm, that can be used to solve these problems is PDKind (Property-Directed K-induction)\cite{7886665}. PDKind is an IC3\cite{6148908}-based algorithm, that separates reachability checking and induction reasoning, allowing the induction core to be replaced with k-induction.
 
 \section{Goals}
 \noindent The goal of this work is to create a PDKind engine and integrate it into the Golem Horn Solver\cite{blicha_golem_2023}. 

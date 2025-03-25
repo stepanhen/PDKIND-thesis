@@ -1,68 +1,95 @@
-
 \chapter{Background}
 
 \section{Transition System}
-\noindent In computer science and software verification, it is often helpful to use transition systems as a layer of abstraction over various problems, such as the satisfiability of the Constrained Horn Clause (CHC). Transition systems make it easier to analyze and verify given properties by providing a way to represent the behavior of a computer system or some abstract computation device. This chapter introduces the basic concepts of Transitional Systems, which will help us understand the following chapters.
+\noindent Transition systems provide a framework for modeling how systems change over time through state transitions. They are extensively used in formal methods, program analysis, and verification. Transition systems consist of a set of initial states, a set of states, and a transition relation that defines the evolution of states. Transition systems are used as an abstraction in computer science and software verification to solve several problems, including the Constrained Horn Clause's (CHC) satisfiability. By offering a formal method of representing the behavior of a computer system or an abstract computing device, they make it easier to analyze and verify properties. We will introduce the basic ideas of transition systems in this chapter, which will help us understand the following chapters.
 
 \vspace{\baselineskip}\noindent\textbf{Definition (Transition System)\cite{7886665}:} A transition system is a 4-tuple ($S$, $\mathcal{F}$, $\mathcal{T}$, $\mathcal{I}$), where:
 \begin{itemize}
-    \item $S$ is a finite set of state variables $\vec{x}$, where each $x \in \vec{x}$ has its primed version $x'$ and state $s$ is an interpretation of $\vec{x}$ that assigns a value $s(x)$ to each $x \in \vec{x}$.
-    \item $\mathcal{F}$ is a set of quantifier-free formulas, where for any $F \in \mathcal{F}$ and a state variable $\vec{x}$, $F(\vec{x})$ is a state formula and holds in a state $s$.
-    \item $\mathcal{T}$ is a set of quantifier-free formulas, where for any $T \in \mathcal{T}$ and a state variable $\vec{x}$, $T(\vec{x}, \vec{x}')$ is a transition formula describing transitions.
-    \item $\mathcal{I}$ is a set of formulas, where for any $I \in \mathcal{I}$ and a state variable $\vec{x}$, $I(\vec{x})$ is a state formula describing initial states.
+    \item \( S \) is a finite set of state variables \( \vec{x} \). Each \( x \in \vec{x} \) has a primed version \( x' \) representing its value in the next state. A \textbf{state} \( s \) is a valuation over \( \vec{x} \) that assigns a value \( s(x) \) to each \( x \in \vec{x} \).
+    \item \( \mathcal{F} \) is a set of quantifier-free formulas, where each \( F(\vec{x}) \in \mathcal{F} \) is a \textbf{state formula} that holds in a state \( s \) if \( s \models F \).
+    \item \( \mathcal{T} \) is a set of quantifier-free formulas, where each \( T(\vec{x}, \vec{x}') \in \mathcal{T} \) is a \textbf{transition formula} describing valid transitions between states. A transition from state \( s \) to \( s' \) is allowed if \( (s, s') \models T \) for some \( T \in \mathcal{T} \).
+    \item \( \mathcal{I} \) is a set of formulas, where each \( I(\vec{x}) \in \mathcal{I} \) is a \textbf{state formula} describing initial states. A state \( s \) is an initial state if \( s \models I \).
 \end{itemize}
 
 \vspace{\baselineskip}\noindent\textbf{Definition (Successor):\cite{7886665}} State $s$ has a successor $s'$, when $T(s(\vec{x}), s'(\vec{x}'))$ is true.
 
 \vspace{\baselineskip}\noindent\textbf{Definition (k-reachability):\cite{7886665}} State $s$ is k-reachable if there exists a sequence \newline\noindent $I = s_0, s_1, s_2, \ldots, s_k = s$, where each $s_{i+1}$ is a successor of $s_i$.
 
-\vspace{\baselineskip}Let us have a transition system and property $P$, then $P$ is invariant if all states reachable in the system satisfy it. Otherwise, there exists a trace to a counterexample $\neg P$.
+%\vspace{\baselineskip}Let us have a transition system and property $P$, then $P$ is invariant if all states reachable in the system satisfy it. Otherwise, there exists a trace to a counterexample $\neg P$.
 
 \section{Safety of transition system}
-\xxx{TODO}
+\noindent An essential property in the analysis of transition systems is safety. We consider transition system to be safe if it never reaches an unsafe state during its execution. This property is crucial in verifying the correctness of programs and systems modeled using transition systems.
+
+\vspace{\baselineskip}\noindent\textbf{Definition (Safety Property):}
+A property \( P \) is a \textbf{safety property} if it ensures that "nothing bad will ever happen" during the execution of the system. Formally, given a transition system \( (S, \mathcal{F}, \mathcal{T}, \mathcal{I}) \), a safety property \( P \) holds if for every reachable state \( s \in S \), the condition \( P(s) \) is satisfied.
+
+\vspace{\baselineskip}\noindent\textbf{Definition (Invariant):\cite{7886665}}
+An \textbf{invariant} is a property that holds in all reachable states of a transition system. Formally, a property \( I \) is an invariant if, for a transition system \( (S, \mathcal{F}, \mathcal{T}, \mathcal{I}) \), every reachable state \( s \in S \) satisfies \( I(s) \).
+
+\noindent Safety properties can often be expressed as invariants, as they require that the system never reaches an unsafe state.
+
+\vspace{\baselineskip}\noindent\textbf{Verifying Safety:} To verify whether a transition system satisfies a given safety property, we need to check whether all reachable states of the system satisfy the property. This can be done using different approaches:
+
+\begin{itemize}
+    \item \textbf{Explicit State Exploration:} Enumerate all reachable states and verify that each state satisfies $P$.
+    \item \textbf{Bounded Model Checking (BMC):} Unroll the transition system up to a given bound $k$ and check whether an unsafe state is reachable within $k$ steps.
+    \item \textbf{Inductive Invariant Checking:} Find an inductive invariant $Inv$ such that $\mathcal{I} \Rightarrow Inv$, $Inv \land \mathcal{T} \Rightarrow Inv'$, and $Inv \Rightarrow P$. If such an invariant exists, then $P$ holds for all reachable states.
+\end{itemize}
+
+\vspace{\baselineskip}\noindent\textbf{Example:} Consider a transition system modeling a counter with the following transitions:
+\begin{align*}
+    \mathcal{I}&: x = 0 \\
+    \mathcal{T}&: x' = x + 1
+\end{align*}
+
+A safety property might state that the counter never exceeds a threshold, e.g., $x \leq 10$. The verification process would involve checking whether there exists a trace that leads to a state where $x > 10$. Which, in this situation, obviously exists.
+
+Ensuring safety is critical for system reliability, and we can use various formal verification techniques to determine whether a system satisfies its safety properties.
 
 \section{Satisfiability Modulo Theories}
-\noindent In logic and computer science, the Boolean satisfiability problem,
-also called SAT, is one of the most well-known problems. In 1971, it was proven
-to be the first NP-complete problem  \cite{10.1145/800157.805047}. This greatly
-helped in the field of complexity theory by providing a tool for the
-classification of other computational problems. SAT is widely used, but there
-are cases where it is not possible to represent a problem using only the two
-Boolean values, true and false.
+\noindent In logic and computer science, the Boolean satisfiability problem, also called SAT, is one of the most well-known problems. In 1971, it was proven to be the first NP-complete problem \cite{10.1145/800157.805047}. This greatly helped in the field of complexity theory by providing a tool for the classification of other computational problems. SAT is widely used, but there are cases where it is not possible to represent a problem using only the two Boolean values, true and false.
 
-This led to the generalization of SAT to more complex formulas, which can
-include real numbers, integers, or even lists and other data structures. In
-other words, an SMT instance arises as a generalization of SAT instance, where
-Boolean variables are replaced with predicates of some theory. Examples of such
-theories are uninterpreted functions (UF), arrays or linear arithmetics (LA),
-or, more specifically, linear real arithmetics (LRA), which we will focus on in
-the rest of this work.
+This led to the generalization of SAT to more complex formulas, including real numbers, integers, or even lists and other data structures. In other words, an SMT instance arises as a generalization of a SAT instance, where Boolean variables are replaced with predicates of some theory. Examples of such theories are uninterpreted functions (UF), arrays, linear arithmetic (LA), or, more specifically, linear real arithmetic (LRA), which we will focus on in the rest of this work.
+
+SMT solvers are widely used in various fields, such as formal verification, model checking, program synthesis, and hardware verification. They are instrumental in solving real-world problems that involve reasoning over complex theories, such as reasoning about hardware designs, program correctness, and even automated theorem proving.
+
+The concept of SMT was introduced in the late 1990s as a way to extend SAT to handle more expressive logical formulas. SMT solvers combine techniques from both SAT solving and decision procedures for various theories, making them more powerful and versatile than traditional SAT solvers.
+
+Each theory in SMT corresponds to a set of logical rules and operations for a specific type of data. For instance, in the case of Linear Real Arithmetic (LRA), the theory defines operations and constraints over real numbers. SMT solvers then check the satisfiability of a formula under a combination of such theories, making it more expressive than just Boolean logic.
+
+For example, consider a system where we need to check if there is an assignment of integer values $x$ and $y$ that satisfies the following conditions:
+\begin{equation*}
+    2x + y \geq 10 \land x - y = 3
+\end{equation*}
+
+A traditional SAT solver would not be able to handle this problem, as it involves arithmetic over integers. However, using the linear arithmetic (LA) theory, an SMT solver can quickly solve this problem.
+
+While SAT solvers are only used for assigning values for Boolean variables, SMT solvers work with more complex theories, allowing them to handle constraints over data types beyond just true or false values. This extension makes SMT a powerful tool for solving problems that SAT solvers cannot address.
 
 \section{CHC Satisfiability}
-\noindent Constrained Horn Clauses (CHCs) are a fragment of First Order Logic
-modulo constraints that captures many program verification problems as
+\noindent Constrained Horn Clauses (CHCs) is a fragment of First Order Logic
+modulo constraints that capture many program verification problems as
 constraint solving.
 
 \vspace{\baselineskip}\noindent
 They extend Horn Clauses, which are logical formulas of the form:
-
-\begin{equation}
+\begin{equation*}
     P_{1} \land P_{2} \land \dots \land P_{n} \implies H
-\end{equation}
-where $P_i$ are body literals and $H$ is the head of the clause. 
+\end{equation*}
+where $P_i$ are body literals and $H$ is the head of the clause.
 
 \vspace{\baselineskip}
-In CHCs, the literals in the body can include constraints in a first order theory, such as linear arithmetics, boolean logic etc.
-Therefore CHC is a formula of the form:
-\begin{equation}
+In CHCs, the literals in the body can include constraints in a first-order theory, such as linear arithmetics, boolean logic, etc.
+Therefore, CHC is a formula of the form:
+\begin{equation*}
     \phi \land P_{1} \land P_{2} \land \dots \land P_{n} \implies H
-\end{equation}
-where $\phi$ is a constraint in the first order theory, $P_i$ and $H$ are uninterpreted predicates. 
+\end{equation*}
+where $\phi$ is a constraint in the first order theory, $P_i$ and $H$ are uninterpreted predicates.
 
 \vspace{\baselineskip}\noindent
 A CHC is satisfiable if there exists an interpretation of the uninterpreted predciates $P_i$ and $H$ that is valid in the background theory.
 
-The main advantage of CHC is that it separates modeling
+The main advantage of CHC is that it separates the modeling
 from solving by translating the program’s behavior and properties into
 constrained language and then using a specialized CHC solver to solve various
 verification tasks across programming languages by deciding the satisfiability
@@ -70,11 +97,10 @@ problem of a CHC system.
 
 \vspace{\baselineskip}\noindent
 For example, we consider a program with a loop:
-
 \vspace{\baselineskip}
 \begin{figure}[h]
-\begin{mdframed}
-\begin{lstlisting}
+    \begin{mdframed}
+        \begin{lstlisting}
 int i = 10;
 
 while (x > 0) {
@@ -82,62 +108,151 @@ while (x > 0) {
 }
 
 assert (x >= 0);
-\end{lstlisting}
-\end{mdframed}
+        \end{lstlisting}
+    \end{mdframed}
 \end{figure}
 
-We can encode the behavior and safety of this program in CHCs:
+\noindent We can encode the behavior and safety of this program in CHCs:
 
-\vspace{\baselineskip}
+\noindent\vspace{\baselineskip}
 \textbf{Initial clause:}
 \begin{equation}
     x = 10 \implies P(x)
+    \label{chc:init}
 \end{equation}
-
 \vspace{\baselineskip}
 \textbf{Transition clause:}
 \begin{equation}
     x > 0 \land P(x) \land x' = x - 1 \implies P(x')
+    \label{chc:trans}
 \end{equation}
-
 \vspace{\baselineskip}
-\textbf{Terminal clause:}
+\textbf{Safety clause:}
 \begin{equation}
     x < 0 \land P(x) \implies False
+    \label{chc:safe}
 \end{equation}
 
-In this simple example, we encoded the program in three clauses. The initial
-clause describes the initial states of the program and implies an uninterpreted
-predicate $P(x)$ which is the loop invariant. The transition clause describes one
-transition step of the loop which consists of checking, whether $x$ satisfies the
-loop condition $x > 0$ and the invariant $P(x)$, and decrementing $x$. Satisfiability
-of the left hand side implies the invariant $P(x')$ for the newly decremented $x$.
-At last, in the terminal clause, we need to check whether the assertion
-condition is met. We achieve this by checking for the negation of the assert.
-Satisfiability of such negation implies a false state.
+In this simple example, we encode the program using three CHC clauses. \eqref{chc:init} describes the initial state of the program and introduces an
+uninterpreted predicate $P(x)$, which represents the loop invariant. \eqref{chc:trans} describes one step of the loop's transition: it checks if $x>0$
+(the loop condition) and $P(x)$ (the invariant), then decrements $x$.
+Satisfiability of the left-hand side of this clause implies that the invariant
+$P(x')$ holds for the decremented value of $x$. Finally, \eqref{chc:safe}
+checks the assertion condition. We verify the assertion by checking if its negation
+leads to a contradiction. If the negation is satisfiable, it
+implies a false state, indicating that the assertion does not hold.
 
-The compact representation of a loop in CHCs is:
+In the previous example, we demonstrated how to encode a simple loop using
+Constrained Horn Clauses (CHCs). This encoding process is not limited to simple
+loops and can be extended to more complex and less deterministic loops. By
+representing the loop’s initial state, transition, and termination conditions
+as CHCs, we can analyze the program's behavior over a series of execution
+steps. We can introduce a compact representation of a loop in CHCs as follows.
 
 \vspace{\baselineskip}
 \begin{equation}
-    Init(V) \implies Inv(V)
-    Inv(V) \land Tr(V, V') \implies Inv(V')
-    Inv(V) \land Bad(V) \implies False
+    \begin{aligned}
+        Init(V) &\implies Inv(V) \\
+        Inv(V) \land Tr(V, V') &\implies Inv(V') \\
+        Inv(V) \land Bad(V) &\implies False
+    \end{aligned}
 \end{equation}
-
-With this approach, we can encode even more complex and less deterministic loops. To get some finite trace of the loop, we need to unroll it some $k$ times.
-
+This representation allows us to analyze the loop's behavior over a finite number of iterations. To obtain a finite trace of the loop, we unroll it $k$ times, where $k$ is a finite number.
 \vspace{\baselineskip}
 \begin{equation}
     Init(V) \land Tr(V, V^2) \dots \land Tr(V^{k-1}, V^k) \land Bad(V^k)
 \end{equation}
-
-Such unrolled loop is called \textbf{Bounded Model Checking (BMC) formula}. With increasing $k$, we can evaluate more BMC formulas and use them to find more bugs in the system. But to prove that there are no bugs, we need find inductive invariants. In our work, we will use BMC formulas to build such invariants.
+This unrolled loop is known as a \textbf{Bounded Model Checking (BMC)} formula.
+By increasing $k$, we can evaluate more BMC formulas, which helps detect more system bugs. However, we must identify inductive invariants to prove that no bugs exist. In our work, we will leverage BMC formulas to discover
+these invariants.
 
 
 \section{OpenSMT}
 \noindent OpenSMT\cite{10.1007/978-3-642-12002-2_12} is an open-source SMT solver developed by the Formal Verification and Security Lab based at the University of Lugano. It includes a parser for SMT-LIB\cite{BarFT-SMTLIB} language, a state-of-the-art SAT-Solver, and a clean interface for new theory solvers, currently supporting various logics such as QF\_UF, QF\_LIA, QF\_LRA, and more. Currently, there is a second version OpenSMT2\cite{10.1007/978-3-319-40970-2_35}, which supports interpolation for propositional logic, QF\_UF, QF\_LRA, QF\_LIA, and QF\_IDL.
 
+\section{Induction vs k-Induction}
+\newtheorem{definition}{Definition}
+\noindent The PDKind algorithm is a combination of IC3 and k-induction.
+IC3\cite{6148908} is a commonly used method that uses induction to show a property is invariant by incrementally constructing an inductive strengthening of the property. PDKind \cite{7886665} breaks IC3 into modules, which allows replacing the induction method with k-induction.
+
+We need to introduce two definitions to compare the relative strength of induction and k-induction. Let us have a transition system ($S$, $\mathcal{F}$, $\mathcal{T}$, $\mathcal{I}$).
+\vspace{\baselineskip}
+\begin{definition}
+($\mathcal{F}$-Induction\cite{7886665}): Let $\mathcal{F}$ be a set of state formulas, where $P \in \mathcal{F}$. Then \( P \) is $\mathcal{F}$-inductive if:
+\begin{align*}
+    I(\vec{x})
+    &\implies \mathcal{F}(\vec{x}), \hspace{5cm}&\text{(init)} \\
+    \mathcal{F}(\vec{x}) \land T(\vec{x}, \vec{x}') &\implies P(\vec{x}'). \hspace{5cm}&\text{(cons)}
+\end{align*}
+If $\mathcal{F} = {P}$, we say that \( P \) is inductive,
+\label{Def:ind}
+\end{definition}
+
+\vspace{\baselineskip}
+\cite{7886665} states that if P is inductive, it is also invariant. However, invariants are generally not inductive. To prove that \( P \) is an invariant, we need to find a set of formulas $\mathcal{F}$ that includes \( P \) and is itself inductive. This set is also called the strengthening of \( P \). If such a strengthening exists, then \( P \) must be an invariant.
+
+\begin{minipage}{\textwidth}
+\begin{definition}
+($\mathcal{F}^k$-Induction\cite{7886665}):Let $\mathcal{F}$ be a set of state formulas, where $P \in \mathcal{F}$. Then \( P \) is $\mathcal{F}^k$-inductive if:
+
+\begin{align*}
+    I(\vec{x_0}) \land \bigwedge_{i = 0}^{l - 1}T(\vec{x_i}, \vec{x}_{i+1})
+    &\implies \mathcal{F}(\vec{x_l}), \quad &\text{for } 0 \leq l < k \quad \text{(k-init)} \\
+    \bigwedge_{i = 0}^{k - 1}(\mathcal{F}(\vec{x_i}) \land T(\vec{x_i}, \vec{x}_{i+1}))
+    &\implies P(\vec{x_k}). \quad &\text{(k-cons)}
+\end{align*}
+If $\mathcal{F} = {P}$, we say that \( P \) is \( k \)-inductive,
+\label{Def:kind}
+\end{definition}
+\end{minipage}
+If we substitute \( k \) with 1 in \( Definition \) \ref{Def:kind}, we can see that a property that is inductive is 1-inductive and also \( k \)-inductive for any \( k \). In the other direction, \cite{10.1007/978-3-319-08867-9_55} shows that if a property \( P \) is \( k \)-inductive and the logical theory allows quantifier elimination, then an inductive strengthening of \( P \) can be constructed by interpolation.
+
+For theories that admit quantifier elimination, k-induction and induction have the same deductive power. However, \cite{Bjørner2015} shows that k-induction can yield more succinct strengthening. For other theories, such as \( Boolean logic \) or \( Linear arithmetic \), k-induction may be exponentially more powerful than induction due to weaker interpolation.
+
+\subsection*{Practical Effectiveness}
+\noindent \cite{7886665} shows that k-Induction is effective, especially when combined with algorithms like IC3.
+\cite{7886665} demonstrates the effectiveness of k-induction on an example. The same example is depicted in Figure \ref{ex:ind vs kind}.
+
+\begin{figure}[h]
+    \begin{mdframed}
+        \begin{lstlisting}
+Invariant Property P: a[0] == 0
+
+Initial States:
+i = 0
+j = 0
+a[0] = 0
+
+Transition:
+j = Random() mod (i+1)
+i = i + 1 mod N
+a[i] = a[j]
+        \end{lstlisting}
+        \caption{Induction vs K-induction example}\label{ex:ind vs kind}
+    \end{mdframed}
+\end{figure}
+
+\vspace{\baselineskip}The example shows a transition system, where zeroes are written to an array in a circular manner. The goal is to prove that the property $a[0] == 0$ is true throughout the execution of the program.
+
+\newpage
+\vspace{\baselineskip}\noindent \textbf{Induction:}
+
+\vspace{\baselineskip}\noindent To prove \( P \) using induction, we must show the following:
+\begin{itemize}
+    \item\textbf{Initial state}: \( P \) holds in the initial state. This is true since $a[0] = 0$
+    \item\textbf{Inductive step}: If \( P \) holds in state \( k \), it must hold in state \( k + 1\)
+\end{itemize}
+
+Here induction fails because it only considers a single step, which doesn't guarantee that $a[j]$ is always defined correctly. Thus, the program could copy a value from an undefined location to $a[0]$, which could break the property.
+
+\vspace{\baselineskip}\noindent \textbf{K-Induction:}
+
+\vspace{\baselineskip}\noindent While induction attempts to prove \( P \) in a single step, k-induction considers a sequence of steps. In this case, choosing \( k = N + 1 \) allows the index \( i \) to cycle back to 0, covering a complete cycle of transitions.
+
+Over these \( N+1 \) steps, every position in the array copies a zero from a previous index, eventually filling the entire array with zeros. This guarantees that \( a[0] = 0 \) always holds.
+Thus, \( P \) is \( (N+1) \)-inductive.
+
+\vspace{\baselineskip}This example illustrates how \( k \)-induction succeeds where simple induction fails, particularly in systems with state transitions that unfold over multiple steps.
 
 %\section{SMT-LIB}
 %\noindent SMT-LIB\cite{BarFT-SMTLIB} is an international initiative that provides standard descriptions of background theories used in SMT solvers and develops common input and output languages for SMT solvers. It offers a unified framework for the description of SMT problems.  Additionally, SMT-LIB maintains a library of input problems, or benchmarks, written in the SMT-LIB language to support the development of different SMT solvers.

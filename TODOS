@@ -15,14 +15,16 @@ knihovny ma tu vyhodu, ze ho lze pouzit  v jinych verifikacnich nastrojich.
 - Experimenty OK, klidne jeste pridat text
 
 Par konkretnich komentaru:
-- Popisujete Golem, ale ctenari chybi kontext, protoze jste vubec nevysvetlil,
+OK - Popisujete Golem, ale ctenari chybi kontext, protoze jste vubec nevysvetlil,
   co je to problem splnitelnosti Hornovych klauzuli. Tady je to potrebne
   propojit s Vasim problemem. Ted vidim, ze Vam zrejme i chybi definice jakym
   problemem sa vlastne zabyvate, chybi definice "Safety of transition system"
 
 OK - Sekce 2.4. mi moc nezapada to kontextu prace.
 
-- Sekce 4.1 patri spis do backgroundu a taky tam popisujete priklad, ktery ale
+OK - Sekce 4.1 patri spis do backgroundu a taky tam popisujete priklad,
+
+OK- ktery ale
   je v podstate cely z PDKIND clanku, tak by mel mit jasne odcitovany. Ted to
   trochu vypada, ze si pripisujete jejich zasluhy ("Here WE demonstrate its
   effectiveness ...")
@@ -36,12 +38,12 @@ OK - Sekce 2.4. mi moc nezapada to kontextu prace.
 - Experimenty – zvyraznit sloupec tabulky s vlastnim resenim, at je jasne, co
   je Vase.
 
-- V casti 4.1 neni duvod u k-indukce uvadet nejake zjednodusene definice.
+OK- V casti 4.1 neni duvod u k-indukce uvadet nejake zjednodusene definice.
   Odkazujete se tam na praci [8], kde se vyskytuji presnejsi definice, ale neni
   jasne, proc je nemate primo v textu. Navic teda ty definice vypadaji spis
   jako vysvetleni, nemaji prilis tvar definic.
 
-- V casti 4.1. mate vetu: “P is even k-inductive for k ≤ N.” Myslim, ze Vam tam
+OK- V casti 4.1. mate vetu: “P is even k-inductive for k ≤ N.” Myslim, ze Vam tam
   vypadlo “not”, to je pomerne dulezite.
 
 - Cast 4.2 je tezko uchopitelna, najednou se tam objevuje pokrocile znaceni.
