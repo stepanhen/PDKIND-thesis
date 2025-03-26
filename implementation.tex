@@ -1,13 +1,27 @@
 \chapter{Implementation}
 \noindent In this chapter, we will refer to the description of the PDKind algorithm, analyze it and modify it to fit our implementation.
 
-In our implementation, we needed to analyze the following parts of the algorithm to be able to implement it: \textbf{Satisfiability checking}, \textbf{Generalization}, \textbf{Explanation} and \textbf{Reachability frames representation}.
+\section{Reachability checking procedure}
+The reachability procedure, shownm in \ref{alg:1} is a procedure, which determines whether a given state is reachable in a specific number of steps from a set of initial states. This check is completed using a depth-first search (DFS) strategy, along with other methods and data structures that need to be analyzed to ensure correctness and efficiency in our implementation.
+
 The choice of depth-first search (DFS) in this procedure balances efficiency and memory usage. While DFS minimizes memory overhead compared to breadth-first search (BFS), it may explore deeper infeasible paths first, potentially increasing runtime in cases where a shallower counterexample exists.
+
+The above mentioned methods and data structures, that need analysis are: \textbf{Satisfiability checking}, \textbf{Generalization}, \textbf{Explanation} and \textbf{Reachability frames representation}.
 \section*{Satisfiability Checking}
-\noindent We could use various SMT solvers for satisfiability checking, but Golem already has a wrapper around the OpenSMT solver and uses it in every other engine. Therefore we will use it too for every other satisfiability check, that we will need.
+\noindent We could use various SMT solvers for satisfiability checking, including Z3\cite{}, CVC5\cite{}, or OpenSMT\cite{OpenSMT}, with each solver having different strengths in terms of efficiency, theory support, or integration capabilities.
+
+Since Golem already provides a wrapper around the OpenSMT solver and uses it for satisfiability checking in every other engine, we also chose it for our implementation. This choice maintains consistency across the whole project and avoids problems of integrating a new solver into the project.
+
+Another reason for using OpenSMT is that since it is used in all other Golem engines, it provides a fair performance comparison of these engines with our PDKind engine. Using a different SMT solver in our implementation could give our engine an advantage or a disadvantage in terms of efficiency. By using OpenSMT, we ensure that these possibilities are isolated and that the observed performance differences would come mainly from algorithmic strength rather than solver efficiency.
+
+Furthermore, OpenSMT provides utilities that are very important for our engine. One of them is providing models for satisfiability checks, and the other is the ability to generate interpolants. Since interpolation is used to strengthen inductive invariants, utilizing these features eliminates the need for additional mechanism implementation. While other SMT solvers may offer similar capabilities, choosing OpenSMT is the most convenient and efficient choice for our implementation.
 
 \section*{Generalization}
-\noindent Golem doesn't provide us with the generalization method. Still, it has needed components to create our method, as shown in pseudocode Algorithm \ref{alg:2}. It eliminates all variables except the state ones, represented as $\vec{x}$ from the formula \( T[B]^k(\vec{x}, \vec{w}, \vec{y}) \wedge C(\vec{y}) \) to satisfy the generalization definition.
+
+\noindent Generalization plays an essential role in PDKind by preventing redundant checks and improving abstraction. It ensures that the algorithm abstracts wider state representation rather than handling individual states separately. However, Golem does not provide a built-in generalization method.
+
+Still, it has needed components to create our method, as shown in pseudocode Algorithm \ref{alg:2}. The method uses the KeepOnly function to eliminate all non-state variables from the formula \( T[B]^k(\vec{x}, \vec{w}, \vec{y}) \wedge C(\vec{y}) \), retaining only the state variables $\vec{x}$. We will show that this approach satisfies the generalization definition \ref{generalization}.
+
 \begin{figure}[H]
     \begin{mdframed}
         \begin{algorithmic}[1]
@@ -23,18 +37,51 @@ The choice of depth-first search (DFS) in this procedure balances efficiency and
     \caption{Generalize method}\label{alg:2}
 \end{figure}
 
-\section*{Explanation} \label{Explain}
-\noindent Instead of the \texttt{Explain()} method, we will use another feature of the OpenSMT solver and that is interpolation. To get the interpolant, we tell the solver to give us an interpolation of the first two formulas inserted in it, i.e. for \texttt{CheckSat($A \wedge B \wedge C$)} we want interpolation of $A \wedge B$.
+\subsection*{Relationship between $M$, $T$ and $F$}
+\noindent In algorithm \ref{alg:2}, we use three formulas:
+\begin{itemize}
+    \item \textbf{$T$ (Transition formula)}: Defines the evolution of states over time.
+    \item \textbf{$F$ (State formula)}: Represents the state that we are analyzing.
+    \item \textbf{$M$ (Model)}: A satisfying assignment to formula $T \land F$ that provides an example of a state transition.
+\end{itemize}
 
-On line 13 in Algorithm \ref{alg:1}, we need an interpolant from the \texttt{CheckSAT()} that happened in the previous \texttt{Reachable()} call. Therefore, we need to modify our \texttt{Reachable()} method on line 17 to also return an interpolant along with the false result. Later, we will see that in our implementation each \texttt{CheckSAT()} has its solver instance. To get the interpolant, we just ask the solver to return it if the \texttt{CheckSAT()} fails.
+Given a model $M$, our goal is to abstract it into a formula $G$ that describes a wider set of possible states.
+
+\subsection*{KeepOnly method}
+The KeepOnly method extracts only the state variables from $T \land G$ by removing all the auxiliary variables, such as the intermediate states $\vec{w}$ and the successor states $\vec{y}$ from definition \ref{generalization}. This approach ensures that the generalized formula $G$ depends only on the current state $\vec{x}$, which makes the formula $G(\vec{x})$ an over-approximation as it represents all possible states that satisfy $T \land F$ rather than just the single assignment given by model $M$.
+
+\subsection*{Satisfying the Generalization Definition}
+To confirm that Algorithm \ref{alg:2} correctly implements generalization, we check the two required properties:
+
+
+1. \textbf{Over-approximation}:
+- By removing $\vec{w}, \vec{y}$, we ensure that $G(\vec{x})$ captures all possible satisfying assignments for the transition relation $T$ and condition $F$.
+- This directly satisfies the first condition of the generalization definition \ref{generalization}.
+
+2. \textbf{Consistency with Initial States $A(\vec{x})$}:
+- Since we only eliminate intermediate variables and do not introduce new constraints, $G(\vec{x})$ remains consistent with the original set of reachable states.
+- This ensures that $G(\vec{x})$ does not eliminate any valid states from consideration.
+
+Thus, algorithm \ref{alg:2} produces a valid and useful generalization for PDKind.
+
+\section*{Explanation} \label{Explain}
+\noindent Instead of implementing a custom \( Explain() \) method, we utilize the OpenSMT solver feature, which is an interpolation. To obtain the interpolant, we tell the solver to compute an interpolation of the first two formulas inserted in it. For example, given a satisfiability check $CheckSat(A \land B \land C)$, we want an interpolant of $A \land B$.
+
+Interpolation is useful here because it provides a formula that separates $A \land B$ from $C$, ensuring that the learned constraints eliminate infeasible states without being too restrictive.
+
+On line 13 in Algorithm \ref{alg:1}, we require an interpolant from the \( CheckSAT() \) call that occurred in the previous \( Reachable() \) call. To support this behavior, we modify our \( Reachable() \) method on line 17 to return an interpolant along with the \( false \) result when a check fails. Since interpolation is only defined when the formula is unsatisfiable, we only request an interpolant if \( CheckSAT() \) returns \( false \).
+
+In our implementation, each \( CheckSAT() \) is performed using a separate solver instance. This means obtaining an interpolant is simple; we instruct the solver instance to return the interpolant generated from its internal state, reflecting the formulas used in the failed check.
 
 \section*{Reachability frames representation}\label{RFrames}
-\noindent For the \texttt{Reachability frames} representation, we had several choices. The simplest one was to create a list $R$ of formulas (where $R_i := R[i]$) each time we call \texttt{Reachable()} from outside. This approach is simple, yet not efficient since we would be losing the whole \texttt{Reachability frames} we built in each call, instead of reusing it in another call.
+\noindent For the \( Reachability frames \) representation, we had several choices. The simplest approach was to create a list $R$ of formulas, where each frame is stored as $R_i := R[i]$. Each time we call \( Reachable() \) from outside, we would construct a new list of reachability frames.
 
-Therefore, we will create a better approach and that is a \texttt{Reachability} class, where each instance of this class will hold such list, but calling \texttt{Reachable()} on that instance would only grow the \texttt{Reachability frames} and wouldn't delete it.
+While this method is straightforward, it is inefficient because it discards previously computed frames with each call, preventing reuse and requiring redundant computation. Instead, we create a more efficient approach by making a \( Reachability \) class.
 
-%PUSH
+Each instance of the \( Reachability \) class  maintains a persistent list of frames, where calling \( Reachable() \) on that instance extends the existing reachability frames instead of discarding them. This allows us to reuse previously computed information across multiple calls, improving efficiency and reducing unnecessary recomputation.
+
 \section*{Push}
+We already mentioned that the OpenSMT\cite{OpenSMT} has the option to provide a model after successful satisfiability check.
 We can notice that the \texttt{CheckSAT}
 call returns model \texttt{m\_1}. In our implementation, \texttt{CheckSAT}
 doesn't directly return model, but we can ask the solver to provide one. This
