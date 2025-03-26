@@ -4,25 +4,28 @@
 \section{Methodology}
 \noindent We measured the performance of each engine on the benchmarks from the CHC-COMP\footnote{\url{https://github.com/orgs/chc-comp/repositories}} in the year 2021. CHC-COMP is an annual competition that compares the performance of multiple CHC solvers.
 
-We ran all three engines on all benchmarks from the LRA-TS category of CHC-COMP. This category focuses on transition systems over linear real arithmetic, with 498 benchmarks in it. In these experiments, the goal is to 1) verify the correctness of the PDKind engine by comparing results with the other two engines, and 2) find out how PDKind performs in comparison with the other two engines, where Spacer is the default engine for Golem, and KIND is the best-performing engine for LRA-TS in Golem.
+We ran all three engines on all benchmarks from the LRA-TS category of CHC-COMP. This category focuses on transition systems over linear real arithmetic, with 498 benchmarks in it. In these experiments, the goal is to (1) verify the correctness of the PDKind engine by comparing results with the other two engines, and (2) find out how PDKind performs in comparison with the other two engines, where Spacer is the default engine for Golem, and KIND is the best-performing engine for LRA-TS in Golem.
+
+
 
 \section{Results}
 \noindent All experiments were conducted on a machine with an AMD EPYC 7452 32-core processor and 8 × 32 GiB of memory; the timeout was set to 300 s, where for each engine 8 processes were running in parallel. During the experiments, there were no conflicts in answers between the engines. We can consider this fact as strong proof of the correctness of our engine.
 
 In the table \ref{tab:results}, we can see that PDKind is significantly better than Spacer in the number of SAT results and matched it in the number of UNSAT results. KIND, however, outperformed both engines in both SAT and UNSAT results.
 
+
 \renewcommand{\figurename}{Table}
 \begin{figure}[H]
 \centering
 \begin{tabular}{|c|c|c|c|}
 \hline
-Result & PDKind & Spacer & KIND \\
+Result & \textbf{PDKind} & Spacer & KIND \\
 \hline
-SAT & 242 & 214 & 260 \\
+SAT & \textbf{242} & 214 & 260 \\
 \hline
-UNSAT & 68 & 70 & 84 \\
+UNSAT & \textbf{68} & 70 & 84 \\
 \hline
-TIMEOUT & 188 & 214 & 154 \\
+TIMEOUT & \textbf{188} & 214 & 154 \\
 \hline
 \end{tabular}
 \caption{Number of solved benchmarks from LRA-TS category} % Adds the caption
@@ -47,3 +50,10 @@ In Figure \ref{fig:unsat_indet_comparison}, we compare the UNSAT results of the 
     \caption{Time Comparison: UNSAT results}
     \label{fig:unsat_indet_comparison}
 \end{figure}
+
+\section{Discussion}
+\noindent \noindent The experiments show that PDKind outperforms Spacer in identifying SAT instances and matches it in identifying UNSAT instances, suggesting that its approach is particularly effective for proving existence results. However, it doesn't match the performance of KIND, which solves more problems overall.
+
+The main weakness of PDKind appears in handling UNSAT cases, where it performs slightly worse than Spacer and significantly worse than KIND.
+
+Another observation is that while PDKind is being generally slower than KIND, there are several cases where PDKind successfully solves problems that KIND times out on. This suggests that PDKind might handle certain problem structures more effectively, particularly in cases where KIND's approach does not scale well.

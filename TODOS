@@ -1,6 +1,6 @@
 - text je zatim prilis kratky (chtelo by to alespon cca 50 stranek)
 
-- v castech, ve kterych vychazite z clanku (Golem, PD-KIND), musite poradne
+OK- v castech, ve kterych vychazite z clanku (Golem, PD-KIND), musite poradne
   odcitovat vsechno, co prebirate z techto clanku
 
 OK - chybi Analyza (dulezite pro hodnoceni od vedouciho/oponenta). Naznak
@@ -8,7 +8,7 @@ analyzy je v 3.2, ale to je velmi strucne, a nejsou tam uvedeny vyhody
 alternativnich reseni, jen jejich nevyhody, napriklad u reseni pomoci externi
 knihovny ma tu vyhodu, ze ho lze pouzit  v jinych verifikacnich nastrojich. 
 
-- Je ale nutne pridat jeste diskusi dalsich aspektu, napriklad datovych
+OK- Je ale nutne pridat jeste diskusi dalsich aspektu, napriklad datovych
   struktur pouzitych k implementaci (navrh vlastnich vs. pouziti existujicich),
   pripadne pouziti knihoven tretich stran, atd.
 
@@ -29,13 +29,13 @@ OK- ktery ale
   trochu vypada, ze si pripisujete jejich zasluhy ("Here WE demonstrate its
   effectiveness ...")
 
-- Algoritmus 4.3 (Generalization): Chyby vysvetleni metody KeepOnlyVars, neni
+OK- Algoritmus 4.3 (Generalization): Chyby vysvetleni metody KeepOnlyVars, neni
   jasne, jaky je vztah mezi formulemi B,C a F. Neni jasne proc ten algoritmus
   funguje pro to, co pozaduje definice.
 
-- Chyby Vam cislovani definic, takhle se na ne tezko odkazuje.
+OK- Chyby Vam cislovani definic, takhle se na ne tezko odkazuje.
 
-- Experimenty – zvyraznit sloupec tabulky s vlastnim resenim, at je jasne, co
+OK- Experimenty – zvyraznit sloupec tabulky s vlastnim resenim, at je jasne, co
   je Vase.
 
 OK- V casti 4.1 neni duvod u k-indukce uvadet nejake zjednodusene definice.
@@ -46,13 +46,13 @@ OK- V casti 4.1 neni duvod u k-indukce uvadet nejake zjednodusene definice.
 OK- V casti 4.1. mate vetu: “P is even k-inductive for k ≤ N.” Myslim, ze Vam tam
   vypadlo “not”, to je pomerne dulezite.
 
-- Cast 4.2 je tezko uchopitelna, najednou se tam objevuje pokrocile znaceni.
+OK- Cast 4.2 je tezko uchopitelna, najednou se tam objevuje pokrocile znaceni.
   Zase jsou tady naznaky analyzy, ale to by bylo dobre oddelit – nejprve popsat
   ten algoritmus a pak az se zabyvat aspekty vlastniho reseni.
 
-- Celkove v kapitole 4 neni vsude jasne, co je prevzate a co je uz Vase reseni.
+OK- Celkove v kapitole 4 neni vsude jasne, co je prevzate a co je uz Vase reseni.
   Ale to souvisi s predchozi poznamkou
 
-- Kapitola 5 by se mela jmenovat spise “Solution” nebo “Realization”.
+OK- Kapitola 5 by se mela jmenovat spise “Solution” nebo “Realization”.
   “Implementation” zni az moc jako vyvojova dokumentace, coz by tam byt melo,
   ale pak tam prave chybi cast popisu reseni.

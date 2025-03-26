@@ -82,7 +82,7 @@ $T(1,2)$, giving us $S(2) \impliedby True$. The last step again applies
 resolution to the instance of the fourth clause with $x := 2$ and the derived
 fact $S(2)$ resulting in $False$ clause. 
 
-Therefore the proof gives us the complete trace from initial states resulting with a false clause.
+Therefore, the proof gives us the complete trace from initial states resulting with a false clause.
 
 
 \section{Engine integration}
@@ -115,7 +115,7 @@ universal, we must integrate an SMT solver for satisfiability checking
 and interpolation. That, as we have already discussed, would not be an
 optimal solution for the purpose of this work. 
 
-The last option would be to utilize Golem for SMT solving. With this approach, we would use C++ to achieve high performance and we would use Golem's integrated SMT solver to eliminate the above-mentioned disadvantages such as not being able to effectively compare engines with different SMT solvers. On the other hand, such an approach would make our engine usable only for the Golem solver and it could not be used as a standalone engine in other solvers.
+The last option would be to utilize Golem for SMT solving. With this approach, we would use C++ to achieve high performance, and we would use Golem's integrated SMT solver to eliminate the above-mentioned disadvantages such as not being able to effectively compare engines with different SMT solvers. On the other hand, such an approach would make our engine usable only for the Golem solver, and it could not be used as a standalone engine in other solvers.
 
 The most suitable option for achieving our goal is to integrate the engine directly into the Golem solver, following the approach used for its existing engines. This approach allows us to fully leverage OpenSMT, Golem’s integrated SMT solver, for satisfiability checking and interpolation. Additionally, we can take advantage of other Golem’s built-in features, which would simplify development and improve efficiency. Although this method ties the engine to Golem, it is ideal for the work's goal of developing a high-performance engine for Golem and comparing it against its other engines.
 

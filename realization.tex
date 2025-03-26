@@ -62,7 +62,7 @@ if(result == s_True) {
 \end{figure}
 On lines 1-3, we initialize the config for the solver. The function on line number 3 chooses an interpolating algorithm with the value 4. On lines 5-8, we initiate the solver and insert three formulas, A, B, and C. Lines 10-13 are pretty simple. We call the \texttt{check()} procedure, and if the result is \texttt{s\_True}, we get the model.
 
-Othwerwise, we can get the interpolant. The crucial part is choosing the correct mask. The mask represents which formulas in the solver should be included in the interpolation. In the binary representation of the mask, the i-th bit corresponds to an i-th formula in the solver frame. A bit of value 1 includes the corresponding formula, and 0 doesn't. In our case, the mask is equal to 3 (in binary 011). Therefore, we will create an interpolant of $A \wedge B$ because we include A and B and exclude C.
+Otherwise, we can get the interpolant. The crucial part is choosing the correct mask. The mask represents which formulas in the solver should be included in the interpolation. In the binary representation of the mask, the i-th bit corresponds to an i-th formula in the solver frame. A bit of value 1 includes the corresponding formula, and 0 doesn't. In our case, the mask is equal to 3 (in binary 011). Therefore, we will create an interpolant of $A \wedge B$ because we include A and B and exclude C.
 
 
 \subsection{PDKind structures}
@@ -190,7 +190,7 @@ At first, we also need to return a formula with the reachability result. If the 
 
 To produce the interpolants, we must set up a config at the beginning of the function. Later, we will use that config to initialize solvers for satisfiability checking and interpolant production. 
 
-The first such solver is used to check whether the given formula holds in the initial states if the given \texttt{k} is equal to 0. If the check gives us a false result, we continue to produce the interpolant. We do that the way as shown in Figure \ref{ex:MainSolver} but, we will use \texttt{mask = 1} because we don't insert the transition formula into the solver and therefore we only have $A \wedge B$ and want to interpolate $A$. 
+The first such solver is used to check whether the given formula holds in the initial states if the given \texttt{k} is equal to 0. If the check gives us a false result, we continue to produce the interpolant. We do that the way as shown in Figure \ref{ex:MainSolver} but, we will use \texttt{mask = 1} because we don't insert the transition formula into the solver, and therefore we only have $A \wedge B$ and want to interpolate $A$. 
 
 If the given \texttt{k} is greater than zero, we can begin with the while loop. Before that, we need to change the version of the given \texttt{formula} from 0 to 1. To achieve that, we will use a \texttt{TimeMachine} and its function \texttt{sendFlaThroughTime(PTRef fla, int steps)}, which takes the \texttt{formula} and increases its version by the \texttt{steps} number.
 
@@ -272,7 +272,7 @@ struct PushResult {
 
 In the next step, we must update the \texttt{steps\_to\_ctx} value, which has been set to 0 during the initialization. This update occurs in the same part of the code where we set the \texttt{isInvalid} flag to \texttt{True}. The new value of \texttt{steps\_to\_ctx} will be the sum of the number of steps required to reach the counterexample from \texttt{g\_cex} (i.e., \texttt{g\_cex.num\_of\_steps}) and a number \texttt{k} returned by the \texttt{CheckReachability()} function. This \texttt{k} tells us that \texttt{g\_cex} is k-reachable from the initial states. Thus, the final value of \texttt{steps\_to\_ctx} will be \texttt{g\_cex.num\_of\_steps + k}.
 
-Finally, we need to correctly assign the previously used value \texttt{num\_of\_steps} for each newly created counterexample. We already analyzed in section \ref{UNSATWit} that a new counterexample is only generated once.. This process is displayed in a code snippet in Figure \ref{code:CEX}. 
+Finally, we need to correctly assign the previously used value \texttt{num\_of\_steps} for each newly created counterexample. We already analyzed in section \ref{UNSATWit} that a new counterexample is only generated once. This process is displayed in a code snippet in Figure \ref{code:CEX}. 
 
 The new counterexample arises as a generalization of the previous potential counterexample, with its version incremented by \texttt{k}.  Therefore, the value of \texttt{num\_of\_steps} will be the same as the \texttt{num\_of\_steps} of the previous potential counterexample, incremented by \texttt{k}.
 

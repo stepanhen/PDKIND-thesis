@@ -2,13 +2,13 @@
 \noindent In this chapter, we will refer to the description of the PDKind algorithm, analyze it and modify it to fit our implementation.
 
 \section{Reachability checking procedure}
-The reachability procedure, shownm in \ref{alg:1} is a procedure, which determines whether a given state is reachable in a specific number of steps from a set of initial states. This check is completed using a depth-first search (DFS) strategy, along with other methods and data structures that need to be analyzed to ensure correctness and efficiency in our implementation.
+The reachability procedure, shown in \ref{alg:1} is a procedure, which determines whether a given state is reachable in a specific number of steps from a set of initial states. This check is completed using a depth-first search (DFS) strategy, along with other methods and data structures that need to be analyzed to ensure correctness and efficiency in our implementation.
 
 The choice of depth-first search (DFS) in this procedure balances efficiency and memory usage. While DFS minimizes memory overhead compared to breadth-first search (BFS), it may explore deeper infeasible paths first, potentially increasing runtime in cases where a shallower counterexample exists.
 
-The above mentioned methods and data structures, that need analysis are: \textbf{Satisfiability checking}, \textbf{Generalization}, \textbf{Explanation} and \textbf{Reachability frames representation}.
+The above-mentioned methods and data structures, that need analysis are: \textbf{Satisfiability checking}, \textbf{Generalization}, \textbf{Explanation} and \textbf{Reachability frames representation}.
 \section*{Satisfiability Checking}
-\noindent We could use various SMT solvers for satisfiability checking, including Z3\cite{}, CVC5\cite{}, or OpenSMT\cite{OpenSMT}, with each solver having different strengths in terms of efficiency, theory support, or integration capabilities.
+\noindent We could use various SMT solvers for satisfiability checking, including Z3\cite{10.1007/978-3-540-78800-3_24}, CVC5\cite{10.1007/978-3-030-99524-9_24}, or OpenSMT\cite{10.1007/978-3-642-12002-2_12}, with each solver having different strengths in terms of efficiency, theory support, or integration capabilities.
 
 Since Golem already provides a wrapper around the OpenSMT solver and uses it for satisfiability checking in every other engine, we also chose it for our implementation. This choice maintains consistency across the whole project and avoids problems of integrating a new solver into the project.
 
@@ -48,20 +48,24 @@ Still, it has needed components to create our method, as shown in pseudocode Alg
 Given a model $M$, our goal is to abstract it into a formula $G$ that describes a wider set of possible states.
 
 \subsection*{KeepOnly method}
-The KeepOnly method extracts only the state variables from $T \land G$ by removing all the auxiliary variables, such as the intermediate states $\vec{w}$ and the successor states $\vec{y}$ from definition \ref{generalization}. This approach ensures that the generalized formula $G$ depends only on the current state $\vec{x}$, which makes the formula $G(\vec{x})$ an over-approximation as it represents all possible states that satisfy $T \land F$ rather than just the single assignment given by model $M$.
+\noindent The KeepOnly method extracts only the state variables from $T \land G$ by removing all the auxiliary variables, such as the intermediate states $\vec{w}$ and the successor states $\vec{y}$ from definition \ref{generalization}. This approach ensures that the generalized formula $G$ depends only on the current state $\vec{x}$, which makes the formula $G(\vec{x})$ an over-approximation as it represents all possible states that satisfy $T \land F$ rather than just the single assignment given by model $M$.
 
 \subsection*{Satisfying the Generalization Definition}
-To confirm that Algorithm \ref{alg:2} correctly implements generalization, we check the two required properties:
+\noindent To confirm that Algorithm \ref{alg:2} correctly implements generalization, we check the two required properties:
 
-
-1. \textbf{Over-approximation}:
-- By removing $\vec{w}, \vec{y}$, we ensure that $G(\vec{x})$ captures all possible satisfying assignments for the transition relation $T$ and condition $F$.
-- This directly satisfies the first condition of the generalization definition \ref{generalization}.
-
-2. \textbf{Consistency with Initial States $A(\vec{x})$}:
-- Since we only eliminate intermediate variables and do not introduce new constraints, $G(\vec{x})$ remains consistent with the original set of reachable states.
-- This ensures that $G(\vec{x})$ does not eliminate any valid states from consideration.
-
+\newpage
+\begin{enumerate}
+    \item\textbf{Over-approximation}:
+    \begin{itemize}
+        \item By removing $\vec{w}, \vec{y}$, we ensure that $G(\vec{x})$ captures all possible satisfying assignments for the transition relation $T$ and condition $F$.
+        \item This directly satisfies the first condition of the generalization definition \ref{generalization}.
+    \end{itemize}
+    \item\textbf{Consistency with Initial States $A(\vec{x})$}:
+    \begin{itemize}
+        \item Since we only eliminate intermediate variables and do not introduce new constraints, $G(\vec{x})$ remains consistent with the original set of reachable states.
+        \item This ensures that $G(\vec{x})$ does not eliminate any valid states from consideration.
+    \end{itemize}
+\end{enumerate}
 Thus, algorithm \ref{alg:2} produces a valid and useful generalization for PDKind.
 
 \section*{Explanation} \label{Explain}
@@ -80,30 +84,42 @@ While this method is straightforward, it is inefficient because it discards prev
 
 Each instance of the \( Reachability \) class  maintains a persistent list of frames, where calling \( Reachable() \) on that instance extends the existing reachability frames instead of discarding them. This allows us to reuse previously computed information across multiple calls, improving efficiency and reducing unnecessary recomputation.
 
-\section*{Push}
-We already mentioned that the OpenSMT\cite{OpenSMT} has the option to provide a model after successful satisfiability check.
-We can notice that the \texttt{CheckSAT}
-call returns model \texttt{m\_1}. In our implementation, \texttt{CheckSAT}
-doesn't directly return model, but we can ask the solver to provide one. This
-is done by initializing a new solver instance for each check and then asking
-for a model, if the check is true.
+\section{Push}
+\section*{Induction frame}
+\noindent Induction frame is a key data structure in the PDKind algorithm. It is used to store lemmas lead to creating inductive invariants.
 
-On line 19, we can see that \texttt{Reachable()} accepts more arguments and
-returns more values than shown in Algorithm
-\ref{alg:1}. This new
-\texttt{Reachable($i$,$j$,$F$)} method checks if $F$ is reachable in k steps
-where $i\leq k \leq j$. To achieve this behavior in our implementation, we
-create a wrapper function that calls \texttt{Reachable($k$, $F$)} in a for loop
-and returns the first \texttt{k} where the call was successful along with the
-result. The \texttt{i} return value is an interpolant of the last
-\texttt{Reachable()} check if the whole check wasn't successful.
+In our implementation, we represent the \( Induction Frame \) as a set of objects, where each object consists of:
+\begin{itemize}
+    \item A lemma, representing an inductive candidate formula.
+    \item A counterexample structure, which stores additional information about the counterexample.
+\end{itemize}
+We choose to store the counterexample in a different structure, which allows us to keep not only the counterexample formula but also the number of steps needed to reach it from the initial states. This additional data is crucial for generating unsatisfiability witnesses when proving an \( UNSAFE \) property.
 
-\section*{PDKind}
-In our implementation, the property \( P \) is a negation of a query, that
-we get on the input, which represents bad states. We also need to check if the
-initial states are empty, which would result in \( SAFE \), or if the query
-holds in the initial states, which would result in \( UNSAFE \).
+\section*{Extended Reachable method}
+\noindent We previously mentioned that OpenSMT\cite{OpenSMT} provides the option to retrieve a model after a successful satisfiability check. Since OpenSMT does not return models by default, we initialize a new solver instance for each satisfiability check. This ensures that model extraction remains independent for each query and avoids unintended side effects when performing multiple checks.
 
+On line 19, we see that \( Reachable() \) accepts more arguments and returns more values than shown in Algorithm \ref{alg:1}. The extended method $Reachable(i, j, F)$ now checks whether \( F \) is reachable within \( k \) steps, where \( i \leq k \leq j \).
+
+To implement this behavior, we create a wrapper function that iterates over possible values of \( k \), calling $Reachable(k, F)$ in a loop. The function returns the first \( k \) where reachability is successful, along with the result.
+
+If none of the calls succeed, instead of returning just \( false \) result, we extract an interpolant from the final \( Reachable() \) check. This allows us to refine our constraints even in cases where reachability fails, improving the overall efficiency of the algorithm.
+
+While this approach ensures correctness, initializing a new solver instance for each check introduces some performance overhead. However, since each \( CheckSAT() \) call operates independently, this trade-off is necessary to maintain solver consistency. Similarly, iterating over multiple values of \( k \) increases computational effort but allows us to efficiently find the earliest reachable step, which improves overall precision.
+
+
+\section{PDKind}
+\noindent In our implementation, the property \( P \) is defined as the negation of a query, that
+we get on the input, which represents a set of bad states. This transformation ensures that proving \( P \) invariant is equivalent to proving that the original query is never reachable.
+
+Before running the main loop of PDKind, we perform two initial checks:
+\begin{enumerate}
+    \item\textbf{Are the initial states empty?} If there are no initial states, the system is then trivially safe, and so we return \( SAFE \).
+    \item\textbf{Does the query hold in the initial states?} If the query already holds in the initial states, the system is immediately unsafe, and we return \( UNSAFE \).
+\end{enumerate}
+
+If neither of these conditions is met, the algorithm continues with an iterative process which calls \( Push() \) procedure to find a k-inductive strengthening of \( P \) .
+
+The method continues until it either finds a k-inductive invariant (proving safety) or discovers a counterexample (proving unsafety).
 \section{Validity checking}
 \noindent In many cases, it is often required to provide a witness to the
 answer obtained from solving the CHC satisfiability problem. In software
@@ -115,6 +131,8 @@ witness is a proof presented as a sequence of derivations of ground instances
 of the predicates, where for the proof to be valid, each premise must be a
 conclusion of some previously derived step.
 
+Witnesses are essential in formal verification, as they provide concrete evidence to support the solver's conclusion, ensuring that verification results are both explainable and reproducible.
+
 In Golem \cite{blicha_golem_2023}, each engine provides a validity witness when
 the option \texttt{--print-witness} is used. To follow the structure Golem has,
 we need to implement such an option for our PDKind engine as well.
@@ -124,52 +142,52 @@ we need to implement such an option for our PDKind engine as well.
 witness in our engine. The goal is to generate paths to counterexamples during
 the CHC satisfiability solving process.
 
-To do that, we utilize a function in the Golem solver, which can generate the
+To generate counterexample paths, we utilize a function in the Golem solver, which computes the
 path to a counterexample based on the number of steps required to reach the
-counterexample, for clarity, we will call them \texttt{steps to the
-counterexample}. This allows us to only keep track of the \texttt{steps to a
-counterexample} for each potential counterexample we encounter during the CHC
-solving. The \texttt{steps to a counterexample} of a potential counterexample
+counterexample.
+
+Instead of storing complete counterexample traces, we only keep track of the number of steps needed
+to reach counterexample for each potential counterexample we encounter during the CHC
+solving. The number of steps a potential counterexample
 is a number of steps needed to reach the counterexample from the potential
-counterexample. To do this, we take the \texttt{Induction frame}
-\texttt{(lemma, counterExample)} and create a structure for the
-\texttt{counterExample}, which will hold the formula and the \texttt{steps to a
-counterxample}.
+counterexample. To do this, we take the \( Induction frame \)
+\( (lemma, counterExample) \) and create a structure for the
+\( counterExample \), which will hold the formula and the number of steps to reach the
+counterxample.
 
-In the next step, we need to correctly assign the \texttt{steps to a
-counterexample} to each counterexample, that we find. In Algorithm
+In the next step, we need to correctly assign the number of steps to a
+counterexample to each potential counterexample, that we find. In Algorithm
 \ref{alg:3}, we note that a new counterexample
-\texttt{g\_2} is created only on line 18, which we then use in the else branch
-starting on line 23. The \texttt{steps to a counterexample} assigned to
-\texttt{g\_2} is the \texttt{steps to a counterexample} of
-\texttt{counterExample} increased by \texttt{k}.
+$g_2$ is created only on line 18, which we then use in the else branch
+starting on line 23. The number of steps to a counterexample assigned to
+$g_2$ is the number of steps to a counterexample in $counterExample$ incremented by \( k \).
 
-Finally, we need to modify \texttt{Push()} to return the \texttt{steps to a
-counterexample}. On line 21, when we encounter a reachable counterexample
-\texttt{g\_2}, we assign the \texttt{steps to a counterexample} returned by
-\texttt{Push()} to be the \texttt{steps to a counterexample} of \texttt{g\_2}.
+Finally, we need to modify \( Push() \) procedure to return the number of steps to a
+counterexample. On line 21, when we encounter a reachable counterexample
+$g_2$, we assign the steps to a counterexample returned by
+the \( Push() \) procedure to be the number of steps to a counterexample of $g_2$.
 
 \section*{SAT witness}
 \noindent In this section, we will describe the implementation of the
 satisfiability witness in the PDKind engine. The aim is to construct an
 inductive invariant during the CHC satisfiability solving process.
 
-In the \texttt{Push()} procedure described in Algorithm
-\ref{alg:3}, we are constructing an \texttt{Induction
-Frame}, which is a set of tuples \texttt{(lemma, counterExample)}, where the
-\texttt{lemma} holds for \texttt{n} steps and refutes the
-\texttt{counterExample}. After the solving procedure is finished, we end up on
+In the $Push()$ procedure described in Algorithm
+\ref{alg:3}, we construct an \\ 
+\(Induction Frame\), which is a set of tuples \((lemma, counterExample)\), where the
+\( lemma \) holds for \( n \) steps and refutes the
+\( counterExample \). After the solving procedure is finished, we end up on
 line 12 of the PDKind procedure in Algorithm \ref{alg:4}
 because we are constructing the satisfiability
-witness. We can then take the final \texttt{Induction Frame} and form a
-conjunction of all the lemmas within it. This gives us an n-inductive
-invariant, as the lemmas hold for \texttt{n} steps, and there is no other
-strengthening of the \texttt{Induction Frame}, as indicated by \( F = G \) at
+witness. We can then take the final \( Induction Frame \) and form a
+conjunction of all the lemmas within it. This gives us an \( n \)-inductive
+invariant, as the lemmas hold for \( n \) steps, and there is no other
+strengthening of the \( Induction Frame \), as indicated by \( F = G \) at
 line 11.
 
 The final step is to transform the n-inductive invariant into an inductive
 invariant. To do that, we utilize the Golem solver's function
-\texttt{kinductiveToInductive()}, which takes the n-inductive invariant,
-\texttt{n}, and the system and returns an inductive invariant. This invariant
-is the validity witness for the \texttt{SAT} answer.
+\( kinductiveToInductive() \), which takes the \( n \)-inductive invariant,
+\( n \), and the system and returns an inductive invariant. This invariant
+is the validity witness for the \( SAT \) answer.
 

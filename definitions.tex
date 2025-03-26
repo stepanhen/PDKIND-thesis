@@ -1,30 +1,43 @@
 \chapter{Background}
 
+\newtheorem{definition}{Definition}
 \section{Transition System}
 \noindent Transition systems provide a framework for modeling how systems change over time through state transitions. They are extensively used in formal methods, program analysis, and verification. Transition systems consist of a set of initial states, a set of states, and a transition relation that defines the evolution of states. Transition systems are used as an abstraction in computer science and software verification to solve several problems, including the Constrained Horn Clause's (CHC) satisfiability. By offering a formal method of representing the behavior of a computer system or an abstract computing device, they make it easier to analyze and verify properties. We will introduce the basic ideas of transition systems in this chapter, which will help us understand the following chapters.
 
-\vspace{\baselineskip}\noindent\textbf{Definition (Transition System)\cite{7886665}:} A transition system is a 4-tuple ($S$, $\mathcal{F}$, $\mathcal{T}$, $\mathcal{I}$), where:
-\begin{itemize}
-    \item \( S \) is a finite set of state variables \( \vec{x} \). Each \( x \in \vec{x} \) has a primed version \( x' \) representing its value in the next state. A \textbf{state} \( s \) is a valuation over \( \vec{x} \) that assigns a value \( s(x) \) to each \( x \in \vec{x} \).
-    \item \( \mathcal{F} \) is a set of quantifier-free formulas, where each \( F(\vec{x}) \in \mathcal{F} \) is a \textbf{state formula} that holds in a state \( s \) if \( s \models F \).
-    \item \( \mathcal{T} \) is a set of quantifier-free formulas, where each \( T(\vec{x}, \vec{x}') \in \mathcal{T} \) is a \textbf{transition formula} describing valid transitions between states. A transition from state \( s \) to \( s' \) is allowed if \( (s, s') \models T \) for some \( T \in \mathcal{T} \).
-    \item \( \mathcal{I} \) is a set of formulas, where each \( I(\vec{x}) \in \mathcal{I} \) is a \textbf{state formula} describing initial states. A state \( s \) is an initial state if \( s \models I \).
-\end{itemize}
+\begin{definition}
+    \textbf{Transition System \cite{7886665}:}
+    A transition system is a 4-tuple ($S$, $\mathcal{F}$, $\mathcal{T}$, $\mathcal{I}$), where:
+    \begin{itemize}
+        \item \( S \) is a finite set of state variables \( \vec{x} \). Each \( x \in \vec{x} \) has a primed version \( x' \) representing its value in the next state. A \textbf{state} \( s \) is a valuation over \( \vec{x} \) that assigns a value \( s(x) \) to each \( x \in \vec{x} \).
+        \item \( \mathcal{F} \) is a set of quantifier-free formulas, where each \( F(\vec{x}) \in \mathcal{F} \) is a \textbf{state formula} that holds in a state \( s \) if \( s \models F \).
+        \item \( \mathcal{T} \) is a set of quantifier-free formulas, where each \( T(\vec{x}, \vec{x}') \in \mathcal{T} \) is a \textbf{transition formula} describing valid transitions between states. A transition from state \( s \) to \( s' \) is allowed if \( (s, s') \models T \) for some \( T \in \mathcal{T} \).
+        \item \( \mathcal{I} \) is a set of formulas, where each \( I(\vec{x}) \in \mathcal{I} \) is a \textbf{state formula} describing initial states. A state \( s \) is an initial state if \( s \models I \).
+    \end{itemize}
+\end{definition}
 
-\vspace{\baselineskip}\noindent\textbf{Definition (Successor):\cite{7886665}} State $s$ has a successor $s'$, when $T(s(\vec{x}), s'(\vec{x}'))$ is true.
+\begin{definition}
+    \textbf{Successor \cite{7886665}:}
+    State $s$ has a successor $s'$, when $T(s(\vec{x}), s'(\vec{x}'))$ is true.
+\end{definition}
 
-\vspace{\baselineskip}\noindent\textbf{Definition (k-reachability):\cite{7886665}} State $s$ is k-reachable if there exists a sequence \newline\noindent $I = s_0, s_1, s_2, \ldots, s_k = s$, where each $s_{i+1}$ is a successor of $s_i$.
+\begin{definition}
+    \textbf{k-Reachability \cite{7886665}:}
+    State $s$ is k-reachable if there exists a sequence
+    $I = s_0, s_1, s_2, \ldots, s_k = s$, where each $s_{i+1}$ is a successor of $s_i$.
+\end{definition}
 
-%\vspace{\baselineskip}Let us have a transition system and property $P$, then $P$ is invariant if all states reachable in the system satisfy it. Otherwise, there exists a trace to a counterexample $\neg P$.
+\section{Safety of Transition System}
+\noindent An essential property in the analysis of transition systems is safety. We consider a transition system to be safe if it never reaches an unsafe state during its execution. This property is crucial in verifying the correctness of programs and systems modeled using transition systems.
 
-\section{Safety of transition system}
-\noindent An essential property in the analysis of transition systems is safety. We consider transition system to be safe if it never reaches an unsafe state during its execution. This property is crucial in verifying the correctness of programs and systems modeled using transition systems.
+\begin{definition}
+    \textbf{Safety Property:}
+    A property \( P \) is a \textbf{safety property} if it ensures that "nothing bad will ever happen" during the execution of the system. Formally, given a transition system \( (S, \mathcal{F}, \mathcal{T}, \mathcal{I}) \), a safety property \( P \) holds if for every reachable state \( s \in S \), the condition \( P(s) \) is satisfied.
+\end{definition}
 
-\vspace{\baselineskip}\noindent\textbf{Definition (Safety Property):}
-A property \( P \) is a \textbf{safety property} if it ensures that "nothing bad will ever happen" during the execution of the system. Formally, given a transition system \( (S, \mathcal{F}, \mathcal{T}, \mathcal{I}) \), a safety property \( P \) holds if for every reachable state \( s \in S \), the condition \( P(s) \) is satisfied.
-
-\vspace{\baselineskip}\noindent\textbf{Definition (Invariant):\cite{7886665}}
-An \textbf{invariant} is a property that holds in all reachable states of a transition system. Formally, a property \( I \) is an invariant if, for a transition system \( (S, \mathcal{F}, \mathcal{T}, \mathcal{I}) \), every reachable state \( s \in S \) satisfies \( I(s) \).
+\begin{definition}
+    \textbf{Invariant \cite{7886665}:}
+    An \textbf{invariant} is a property that holds in all reachable states of a transition system. Formally, a property \( I \) is an invariant if, for a transition system \( (S, \mathcal{F}, \mathcal{T}, \mathcal{I}) \), every reachable state \( s \in S \) satisfies \( I(s) \).
+\end{definition}
 
 \noindent Safety properties can often be expressed as invariants, as they require that the system never reaches an unsafe state.
 
@@ -171,7 +184,6 @@ these invariants.
 \noindent OpenSMT\cite{10.1007/978-3-642-12002-2_12} is an open-source SMT solver developed by the Formal Verification and Security Lab based at the University of Lugano. It includes a parser for SMT-LIB\cite{BarFT-SMTLIB} language, a state-of-the-art SAT-Solver, and a clean interface for new theory solvers, currently supporting various logics such as QF\_UF, QF\_LIA, QF\_LRA, and more. Currently, there is a second version OpenSMT2\cite{10.1007/978-3-319-40970-2_35}, which supports interpolation for propositional logic, QF\_UF, QF\_LRA, QF\_LIA, and QF\_IDL.
 
 \section{Induction vs k-Induction}
-\newtheorem{definition}{Definition}
 \noindent The PDKind algorithm is a combination of IC3 and k-induction.
 IC3\cite{6148908} is a commonly used method that uses induction to show a property is invariant by incrementally constructing an inductive strengthening of the property. PDKind \cite{7886665} breaks IC3 into modules, which allows replacing the induction method with k-induction.
 
