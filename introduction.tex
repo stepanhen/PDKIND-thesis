@@ -1,17 +1,74 @@
 \chapter{Introduction}
 
-\noindent In computer science and software engineering, the idea of software verification is becoming more and more important. Verification checks whether the program or system operates correctly and fulfills the given properties. The goal is to detect bugs and errors during the development process.
+\noindent In computer science and software engineering, the idea of software
+verification is becoming increasingly important. Software verification is the
+process of checking whether a program or system operates correctly and meets
+its specification. The goal is to detect bugs and errors during the development
+process and ensure reliability, especially in critical systems.
 
-One of the frameworks that is becoming popular is the Constrained Horn Clauses (CHCs)\cite{10.1007/978-3-031-13185-1_2} framework. CHC is a fragment of First Order Logic modulo constraints that captures many program verification problems as constraint solving. The main advantage of CHC is that it separates modeling from solving by translating the program's behavior and properties into constrained language and then using a specialized CHC solver to solve various verification tasks across programming languages by deciding the satisfiability problem of a CHC system.
+There are several approaches to software verification. Some are based on
+interactive theorem proving, where the user manually constructs proofs using
+logical frameworks. Others rely on static analysis techniques that
+over-approximate a program's behavior to detect potential bugs without
+executing the code. 
 
-Golem\cite{blicha_golem_2023} is one such solver, which integrates the interpolating SMT solver OpenSMT\cite{10.1007/978-3-319-40970-2_35}. Golem currently implements six model-checking algorithms to solve the CHC satisfiability problem.
+In contrast, \textbf{model checking} is a fully automated technique that explores the
+state space of a system and checks whether the desired properties hold. It is
+especially suited for verifying safety properties, which ensure that "nothing
+bad ever happens" during execution. These properties are typically expressed as
+logical formulas over program states, and the system is modeled as a
+\textbf{transition system}, which defines how the system evolves from one state
+to another.
 
-On top of solving the CHC satisfiability problem, each engine in Golem provides a validity witness for their answer. In software verification we can think of these witnesses as invariants for SAFE answers and a path to a counterexample for UNSAFE answer. By providing these witnesses, we can ensure that the engines answer is correct. Also to check, whether the engine doesn't give false witnesses, Golem has built in an internal validator to verify the correctness of the witness. 
+One formalism gaining popularity in this area is the Constrained Horn Clauses
+(CHC)\cite{10.1007/978-3-031-13185-1_2} framework. CHCs form a fragment of
+first-order logic modulo constraints that can express many program verification
+problems as constraint-solving tasks. The key advantage of CHCs is that they
+separate modeling from solving by translating the program’s behavior and
+properties into logical clauses, which can then be passed to a solver to decide
+satisfiability.
 
-One such algorithm, that can be used to solve these problems is PDKind (Property-Directed K-induction)\cite{7886665}. PDKind is an IC3\cite{6148908}-based algorithm, that separates reachability checking and induction reasoning, allowing the induction core to be replaced with k-induction.
+Golem\cite{blicha_golem_2023} is one such solver that integrates the
+interpolating SMT solver OpenSMT\cite{10.1007/978-3-319-40970-2_35}. Golem
+currently implements six model-checking algorithms for solving CHC
+satisfiability problems.
+
+In addition to solving the satisfiability problem, each engine in Golem
+provides a validity witness for its answer. In software verification, these
+witnesses can be viewed as inductive invariants for SAFE answers and
+counterexample paths for UNSAFE answers. By including a witness, the engine's
+answer can be validated. Moreover, to guard against incorrect witnesses, Golem
+has a built-in internal validator that checks each witness's correctness.
+
+One such algorithm for solving CHC problems is PDKind
+(Property-Directed K-induction)\cite{7886665}. PDKind is an
+IC3\cite{6148908}-based algorithm that separates reachability checking from
+induction reasoning, allowing the induction step to be replaced with
+k-induction.
+
+While IC3 uses simple induction, which may not be sufficient to prove more
+complex properties, k-induction can consider multiple steps at once, making it
+more powerful in some cases. By combining the structure of IC3 with the
+strength of k-induction, PDKind aims to improve the performance of model
+checking, especially when verifying difficult safety properties.
 
 \section{Goals}
-\noindent The goal of this work is to create a PDKind engine and integrate it into the Golem Horn Solver\cite{blicha_golem_2023}. 
 
-We will start with defining the background around SMT solving. Then, we will introduce the Golem solver and analyze the PDKind algorithm to design a solution that integrates the PDKind algorithm as an engine into the Golem solver. Afterward, we will implement this design and add the generation of validity witnesses to the implementation. We will test the correctness and efficiency of the implementation using a set of benchmarks and compare the results with other engines. The correctness of the witnesses will be verified using a set of tests that utilize an internal function of the Golem solver, which can verify the correctness of the witnesses.
+\noindent The goal of this work is to implement the PDKind algorithm as a new
+engine and integrate it into the Golem solver\cite{blicha_golem_2023}.
+
+First, we present the necessary background on SMT solving, model checking, and
+CHCs. Then, we introduce the architecture of the Golem solver and analyze the
+PDKind algorithm in detail. Based on this analysis, we design a solution for
+integrating PDKind as a new engine in Golem.
+
+Next, we implement the design and extend it to generate validity witnesses for
+both SAFE and UNSAFE answers. We evaluate the implementation on a set of
+benchmarks, comparing its correctness and efficiency with the other existing
+engines in Golem.
+
+Finally, we use Golem’s internal validator to verify that the produced
+witnesses are correct. Throughout the process, we reflect on the design
+decisions and implementation challenges, with the aim of contributing a
+reliable and reusable component to the Golem verification ecosystem.
 

@@ -1,5 +1,5 @@
 \chapter{PDKind}
-
+\label{PD-Kind}
 % Describe the individual procedures of the algorithm and in each part analyze how the implementation went. If there were more ways to do it, compare them.
 % The last section should describe how we also added validity witnesses because Golem and other engines in it produce them).
 \noindent PDKind is an IC3\cite{6148908}-based algorithm, that separates reachability checking and induction reasoning, allowing the induction core to be replaced with k-induction.
@@ -9,26 +9,123 @@ After reading this chapter, the reader should be able to understand the parts of
 %We will also describe the modifications of the algorithm and the decisions we made when implementing some abstract data structures from the paper.
 
 
+\section{PDKind Main Procedure}  \label{sec:main} The PDKind algorithm aims
+to prove a safety property $P$ is invariant or to find a counterexample. It
+achieves this by separating the process into two subprocedures, which work together within the main
+loop. Before diving into the algorithm, we introduce the key data structures
+and subprocedures it uses. \textit{Reachability frames} for the reachability
+checking, and \textit{Induction frames} for managing induction obligations.
+
+\textbf{Reachability frames} $R_0, R_1, \dots, R_k$ are used to guide the
+reachability checking \ref{ReachabilityChecking}. Each frame $R_i$ is an
+over-approximation of the set of states from which the target formula is
+reachable in exactly $k - i$ steps. In particular, $R_k$ corresponds to the set
+of states satisfying the
+target formula (the “bad” states), and $R_0$ represents states that can reach
+the target in $k$ steps. These reachability frames help avoid redundant work by
+caching which portions of the state space have already been shown to be
+unreachable, thereby preventing the algorithm from re-exploring those paths.
+
+\textbf{Induction frames}, on the other hand, are used by the 
+Push subprocedure in section \ref{Push} to store
+and refine candidate invariants. An induction frame $F$ at a given depth
+$n$ is essentially a set of pairs $(\mathit{lemma}, \mathit{counterExample})$,
+where each $\mathit{lemma}$ is a formula (state property) that is supposed to
+hold as an invariant up to depth $n$, and $\mathit{counterExample}$ is a
+description of states that $\mathit{lemma}$ aims to exclude at depth $n$.
+Initially, the induction frame is initialized with the pair $(P, \neg P)$, meaning
+our starting candidate invariant is $P$ itself, and the “counterexample” to
+this invariant is $\neg P$ (the property’s negation). This indicates that until
+we strengthen $P$, the primary bad state to consider is any state satisfying
+$\neg P$.
+
+Using these structures, the main PDKind procedure coordinates the
+model-checking process. In each iteration, it calls the reachability checking and push
+subprocedures to either extend the proof of $P$ or find a real counterexample.
+Algorithm \ref{alg:4} outlines this top-level procedure. The main loop works as
+follows: we maintain an induction frame $F$ (starting with $(P, \neg P)$) at
+depth $n$ (starting at $n=0$). At each step, we pick a $k$ (typically $k =
+n+1$) and invoke the Push procedure on the current frame $F$ to attempt to find
+a $k$-inductive strengthening of $P$. In other words, Push will try to
+either prove that $F$ (or an extension of $F$) is inductive for $k$ steps, or
+identify how $F$ fails and strengthen it by adding new lemmas.
+
+The Push procedure \ref{Push} internally uses the reachability
+checking procedure to check whether certain potential counterexample states are
+actually reachable from the initial state. If the Push procedure discovers a
+concrete counterexample trace from an initial state to a bad state, it will
+mark the property as invalid. Otherwise, Push returns a strengthened set of
+lemmas (a new induction frame $G$) that is valid up to a higher depth.
+
+After each call to Push, the main algorithm examines the results:
+\begin{itemize} 
+    \item If Push reported that the property is invalid (i.e., a
+counterexample was found), then the main procedure terminates and returns
+\textsf{UNSAFE}, as we have proof that $P$ is not an invariant. 
+    \item If the
+new frame $G$ returned by Push is identical to the old frame $F$ (i.e.\ $G =
+F$, meaning Push did not add any new lemmas), then $F$ is already
+$k$-inductive. In this case, no further strengthening is required—$P$ has been
+proven invariant—so the algorithm returns \textsf{SAFE}. 
+    \item Otherwise (the
+property is not yet proven, but no counterexample was found), the algorithm
+increases the induction depth and continues. We update $n$ to the new value
+$n_p$ provided by Push (which is at least $n+1$), set $F := G$ (using the
+strengthened frame as the new current frame), and repeat the loop for the next
+iteration. 
+\end{itemize}
+
+In this way, the PDKind main procedure iteratively strengthens the candidate
+invariant $P$ with new lemmas and deepens the search, until either a valid
+inductive invariant is achieved or a real counterexample is discovered.
+
+\begin{figure}[H]
+\begin{mdframed}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Initial states $I$, transition formula $T$, property $P$
+\State \textbf{Output:} Return UNSAFE if P is invalid or SAFE when there is no inductive strengthening left
+
+\State $n \gets 0$
+    \State $F \gets (P, \neg P)$
+    \While{true}
+        \State $k \gets n + 1$
+        \State $(F, G, n_p, isInvalid) \gets$ Push($F$, $n$, $k$)
+        \If{$isInvalid$}
+        \State \Return UNSAFE
+        \EndIf
+        \If{$F = G$}
+        \State \Return SAFE
+        \EndIf
+        \State $n \gets n_p$
+        \State $F \gets G$
+    \EndWhile
+
+\end{algorithmic}
+\end{mdframed}
+\caption{Main PDKind procedure}\label{alg:4}
+\end{figure}
 
 
 \section{Reachability checking procedure}\label{ReachabilityChecking}
 
 \noindent To understand the following, we need to introduce a few definitions.
 
-\vspace{\baselineskip}\noindent Let us have a formula in the form
-
-\begin{equation}
-    A(\vec{x}) \wedge T[B]^k(\vec{x},\vec{y},\vec{w}) \wedge C(\vec{y})
-\end{equation}
-
-\vspace{\baselineskip}\begin{definition}
-                          For \( k > 1 \), \( T[F]^k(\vec{x}, \vec{x}') \) is defined as
+\vspace{\baselineskip}\begin{definition}Given a transition $T$ and a state formula $F$.
+For \( k > 1 \), \( T[F]^k(\vec{x}, \vec{x}') \) is defined as
                           \begin{equation*}
                               T(\vec{x}, \vec{w}_1) \land \bigwedge_{i=1}^{k-2} \left( F(\vec{w}_i) \land T(\vec{w}_i, \vec{w}_{i+1}) \right) \land F(\vec{w}_{k-1}) \land T(\vec{w}_{k-1}, \vec{x}')
                           \end{equation*}
-
-                          \noindent where $\vec{w}$ are state variables in the intermediate states.
+                          This represents the unrolling of the transition relation $T$ over $k$ steps, where $F$ holds in the intermediate states $\vec{w}$.
+                          \label{Transition}
 \end{definition}
+
+\vspace{\baselineskip}\noindent
+Not only in this section, but in the whole algorithm we will be using two important techniques, interpolation and generalization. 
+Let us have a formula in the form
+\begin{equation}
+    A(\vec{x}) \wedge T[B]^k(\vec{x},\vec{w},\vec{y}) \wedge C(\vec{y})
+\end{equation}
+where \( T[B]^k(\vec{x}, \vec{w}, \vec{y}) \) follows the previous definition \ref{Transition}, and \( \vec{x} \), \( \vec{w} \), and \( \vec{y} \) represent the initial, intermediate, and final state variables, respectively.
 
 
 \vspace{\baselineskip}
@@ -40,6 +137,8 @@ After reading this chapter, the reader should be able to understand the parts of
         \item \( I(\vec{y}) \) and \( C(\vec{y}) \) are inconsistent.
     \end{enumerate}
 \end{definition}
+Interpolants approximate the set of reachable states from a source \( A(\vec{x}) \) and exclude a target \( C(\vec{y}) \). They are used when the formula is unsatisfiable and help rule out unreachable parts of the state space by over-approximating the reachable states.
+
 
 \vspace{\baselineskip}
 \begin{definition}{\textbf{(Generalization)}}
@@ -50,9 +149,11 @@ After reading this chapter, the reader should be able to understand the parts of
         \item $G(\vec{x})$ and $A(\vec{x})$ are consistent.
     \end{enumerate}
 \end{definition}
+When the formula is satisfiable, we generalize the final state to an under-approximation that still satisfies the formula but covers more states. This helps us work with a broader set of counterexamples and makes the recursive check more efficient.
+
 
 \renewcommand{\figurename}{Algorithm}
-\begin{figure}[h]
+\begin{figure}[H]
     \begin{mdframed}
         \begin{algorithmic}[1]
             \State \textbf{Input:} Target state $F$, maximum steps $k$
@@ -84,78 +185,132 @@ After reading this chapter, the reader should be able to understand the parts of
 \end{figure}
 
 \vspace{\baselineskip}
-\noindent Method shown in Algorithm \ref{alg:1} tries to reach the initial states backwards by using a depth-first search strategy.
+\noindent The core part of PDKind is a depth-first reachability procedure that checks whether the target formula is reachable in exactly \( k \) steps. Instead of searching forward from the initial states, it works backwards from the target and tries to find a trace of the required length that can be extended to the initial states.
 
-To check if \( F \) is reachable from the initial states in \( k \) steps, we
-first check whether \( F \) is reachable in one transition from the previous
-frame \( R_{k-1} \). If there is no such transition, then \( F \) is not
-reachable in \( k \) steps. Otherwise, we get a state that satisfies \( R_{k-1}
-\) and from which \( F \) is reachable in a single step. 
+To make the search more efficient, the algorithm maintains reachability frames \( R_0, \dots, R_k \), where each frame \( R_i \) over-approximates the set of states that can reach the target in exactly \( k - i \) steps. These frames help avoid repeating work and rule out parts of the state space that have already been shown to be unreachable.
 
-We then call a
-generalization procedure, which produces a formula \( G \) (see Definition
-\ref{generalization}). Here, generalization helps avoid redundant checks by creating an abstraction of the counterexamples. Instead of storing the given state, it generates a formula covering multiple possible counterexamples, which reduces the number of times the reachability procedure gets called.
+When a satisfying trace is found, the final state is generalized into an under-approximation that still satisfies the formula but includes more states. The recursive check is then applied to this generalization. If the trace can’t be extended to the initial states, the algorithm learns an interpolant that blocks it and adds it to the corresponding frame to avoid exploring similar paths again.
 
-Then, using a DFS strategy, we recursively
-check whether \( G \) is reachable from the initial states.
-If \( G \) is reachable, then \( F \) is also reachable, and the procedure terminates. Otherwise,
-we can learn an explanation through interpolation (see Definition
-\ref{interpolation}) and eliminate \( G \) by adding the
-explanation into the frame \( R_{k-1} \).
+This procedure is used repeatedly in PDKind and forms the main loop of the algorithm. The pseudocode \ref{alg:1} describes it in more detail.
+
 
 
 \section{Push procedure} \label{Push}
+We have already metioned that the Push procedure utilizes data structure called Induction frame. Here we formally define it. 
 
+\vspace{\baselineskip}
 \begin{definition}{\textbf{(Induction Frame)}}
     \cite{7886665}\label{def:IFrame} A set of tuples $F \subset \mathbb{F} \times \mathbb{F}$, where $\mathbb{F}$ is a set of all state formulas in theory $T$, is an induction frame at index $n$ if $(P, \neg P) \in F$ and $\forall (lemma, counterExample) \in F$:
     \begin{itemize}
-        \item $lemma$ is valid up to $n$ steps and refutes $counterExample$
+        \item $lemma$ is valid up to $n$ steps  and blocks the states described by \\ \( counterExample \), preventing them from occurring at depth \( n \)
         \item $counterExample$ states can be extended to a counterexample to $P$.
     \end{itemize}
 \end{definition}
+In essence, an induction frame tracks the progressive strengthening of an
+invariant over multiple iterations. Each tuple in $F$ consists of a candidate
+invariant formula (the lemma) and a specific “bad” state (the counterexample)
+that the lemma is meant to eliminate from consideration at the current depth.
+As the algorithm runs, these frames are updated: formulas are refined to rule
+out newly discovered bad states, strengthening the invariant.
 
 \vspace{\baselineskip}
 \noindent Induction frame tracks the strengthening of invariants over number of iterations. Every frame consists of a formula that has been refined to eliminate an invalid state.
 
-The procedure shown in Algorithm \ref{alg:3} is the core of the PDKind algorithm.
-It takes the invariant and tries to construct a stronger inductive proof by analyzing its counterexamples and strengthening constraints, while switching between \\
-generalization and reachability checking.
-We will break it down into smaller pieces to understand how it works.
+The Push procedure \ref{alg:3} is the core of the PDKind algorithm’s
+inductive reasoning stage. It takes as input the current induction frame $F$ at
+index $n$ (which contains the current set of lemmas and their associated
+counterexamples) and attempts to push these lemmas to a higher inductive
+step (specifically, up to $k = n+1$) by analyzing counterexamples. In other
+words, Push tries to either prove each lemma holds one step further or to find
+why it fails and strengthen the frame accordingly. Throughout this process,
+Push alternates between generalization and reachability checks.
+We now break down the Push algorithm step by step.
 
+\textbf{(1) Initial $k$-inductiveness check:} \\
+For each obligation $(\mathit{lemma}, \mathit{counterExample})$ in the frame $F$, Push first checks
+whether $\mathit{lemma}$ is $k$-inductive (see Definition \ref{Def:kind}). This is done by
+querying the SMT solver to check the satisfiability of
+$F_{ABS} \wedge T^k \wedge ¬lemma$, where $F_{ABS}$ denotes the
+conjunction of all lemmas in $F$ 
+and $T^k$ represents $k$ steps of the transition relation. If this formula is
+unsatisfiable, it means that $\mathit{lemma}$ is already strong enough up to $n+k$ steps, and we can simply
+carry this obligation into the new induction frame $G$ and continue to the next
+obligation. If instead the formula is satisfiable, the solver produces a model
+$m_1$ witnessing the failure of $k$-inductiveness (meaning $m_1$ is a state at
+depth $k$ where $\mathit{lemma}$ does not hold under the current assumptions).
+We save this counterexample state $m_1$ for later analysis and do not yet add
+$\mathit{lemma}$ to $G$.
 
-The first step (line 11) is to check whether \( lemma \) is
-\( k \)-inductive (see Definition \ref{Def:kind}). This is done by checking if the formula $(F_{ABS} \wedge T_k
-\wedge \neg lemma)$ is satisfiable. We can notice, that \( CheckSAT \) call returns model $m_1$ which
-is an assignment of values to variables that satisfies the formula.
-If the formula $(F_{ABS} \wedge T_k \wedge \neg lemma)$ isn't satisfiable, we
-can push a new obligation to our new induction frame \( G \) and continue.
-Otherwise, we get the model $m_1$ and save it for later.
+\textbf{(2) Counterexample reachability check:} \\
+Next, the Push procedure examines the current $\mathit{counterExample}$ associated with the lemma. It
+checks whether this $\mathit{counterExample}$ could actually occur in a
+concrete execution. This is done by checking satisfiability of
+$F_{ABS} \wedge T^k \wedge counterExample$, which asks whether there
+exists a trace of length $k$ consistent with our current abstraction
+$F_{ABS}$ that ends in a state satisfying $\mathit{counterExample}$. If
+this check returns satisfiable, we obtain a witness model $m_2$ that
+demonstrates a state at depth $k$ matching the counterexample. We then
+generalize $m_2$ to a formula $g_2$. At this point, we know that from any
+state described by $g_2$, we can reach a violation of $P$ (because $g_2$
+over-approximates the counterexample at depth $k$, which leads to $\neg P$ at depth $k$).
+Now we must check if any initial state can lead to a state in $g_2$ within $k$
+steps. We call $\textsc{Reachable}(i, j, g_2)$ with to see if $g_2$ lies on some path from the initial
+states of length between $i$ and $j$ (essentially up to $n$ steps). If this
+reachability check returns true, then we have discovered a concrete
+counterexample execution from an initial state to a state that leads to $\neg
+P$. In this case, the property $P$ is truly violated; we set
+$\mathit{isInvalid} := \text{true}$, indicating that a counterexample has been
+found, and we can break out of the Push loop early. If, on the other hand, the
+reachability procedure determines that $g_2$ is not reachable from any
+initial state, then $m_2$ was a spurious counterexample under the current abstraction. 
+The reachability check will also provide an interpolant  $i_1$ in this
+scenario, which is a formula that separates the initial states from the
+generalized counterexample $g_2$. Specifically, $i_1$ blocks all
+paths to $g_2$. We use this $i_1$ to refine our invariant by
+strengthening the current lemma. We then add the new obligation
+$(i_1, g_2)$ to the current frame $F$. By doing this, we have eliminated the potential
+counterexample $g_2$, and we “try again” with a strengthened invariant.
 
-In the second part (line 16), we check if the \( counterExample \) is
-reachable. If it is, we get model $m_2$ and generalize it to
-$g_2$. We know, that we can reach \( \neg P \) from $g_2$,
-so we need to check if $g_2$ is reachable from the initial states. If it is
-reachable, the property is invalid, and we mark \( isInvalid \gets true \).
+\textbf{(3) Induction failure analysis:} \\
+After handling the $\mathit{counterExample}$, the Push procedure returns to address the initial
+inductiveness failure captured by $m_1$ from step (1). Now we consider
+the generalized form of $m_1$, which is $g_1 = \textsc{Generalize}(m_1, T^k,
+\neg \mathit{lemma})$, which represents a set of states at depth $k$ where
+$\mathit{lemma}$ could fail. We need to check whether this scenario is genuine
+or not. Using the reachability check again, we ask if $g_1$ is reachable from
+the initial state. If $g_1$ is reachable from some initial state, then the failure of $\mathit{lemma}$ at
+depth $k$ corresponds to a real counterexample scenario. We take the original
+$\mathit{counterExample}$ and add a new obligation $(\neg \mathit{counterExample}, \mathit{counterExample})$ to both
+the current frame $F$ and the new frame $G$. This new lemma $\neg
+\mathit{counterExample}$ is a weaker condition which is trivially true up to depth $n$ but will
+block the counterexample at depth $n+1$. By pushing $(\neg
+\mathit{counterExample}, \mathit{counterExample})$ into $F$ and $G$, we ensure
+that this particular bad state is explicitly ruled out in the future, and we
+remove the original stronger (but non-inductive) lemma from consideration.
 
+If $g_1$ is not reachable from any initial state, we can
+salvage the lemma by strengthening it. We compute $g_3$ (an
+interpolant-based strengthening) by combining $i_2$ with the
+original $\mathit{lemma}$ to form a new lema that avoids the counterexample. We replace the old
+$(\mathit{lemma}, \mathit{counterExample})$ in $F$ with $(g_3 \land
+\mathit{lemma}, \mathit{counterExample})$, and push this new tuple back into
+$F$ for further processing. This way, the lemma has been fixed to be true up
+to depth $n+1$.
 
-On line 19, we can see that \( Reachable() \) accepts more arguments and
-returns more values than shown in Algorithm
-\ref{alg:1}. This new
-$Reachable(i,j,F)$ method checks if $F$ is reachable in \( k \) steps
-where $i\leq k \leq j$.
-If this call wasn't successful, we get an interpolant $i_1$ and assign
-it to $g_3$ which eliminates $g_2$. We found a new induction
-obligation $(g_3, g_2)$, which is a strengthening of \( F \). Now,
-we can try again with a potential counterexample eliminated.
-
-Last step is to analyze the induction failure. From the first check we have a
-model $m_1$, which is a counterexample to the k-inductiveness of
-\( lemma \). We again get $g_1$ as a generalization of $m_1$
-and check if $g_1$ is reachable from initial states. If it is
-reachable, we replace \( lemma \) with weaker \( \neg counterExample \)
-and push this new obligation to \( F \) and \( G \). On the other hand,
-if $g_1$ is not reachable, we strengthen \( lemma \) with
-$g_3$ and push this new obligation to \( F \).
+After these steps, the Push procedure continues to process any remaining
+obligations in $F$ (each of which goes through the same sequence of checks and
+potential updates). If at any point a real counterexample was found
+($\mathit{isInvalid} = \text{true}$), Push will terminate early and propagate
+that information to the main procedure. Otherwise, once all obligations are
+handled, Push produces a new induction frame $G$ containing all the lemmas that
+have been confirmed or strengthened for the next depth. It also provides an
+updated index $n_p$ the new depth up to which $G$’s lemmas are valid. The
+original frame $F$ may also have been updated with strengthened lemmas during
+this process. Finally, Push returns $(F, G, n_p, \mathit{isInvalid})$ to the
+main PDKind procedure. The main loop \ref{sec:main} will then use these
+results to decide whether to declare the property proven (if $F = G$), to
+declare it refuted (if $\mathit{isInvalid}$ is true), or to continue the
+process with $F := G$ and $n := n_p$ for another iteration.
 
 \begin{figure}[H]
     \begin{mdframed}
@@ -184,9 +339,8 @@ $g_3$ and push this new obligation to \( F \).
                         \State $ isInvalid \gets true $
                         \State Continue
                     \Else
-                        \State $g_3 \gets i_1$
-                        \State $F \gets F \cup (g_3, g_2)$
-                        \State $Q$.push($(g_3, g_2)$)
+                        \State $F \gets F \cup (i_1, g_2)$
+                        \State $Q$.push($(i_1, g_2)$)
                         \State $Q$.push($lemma, counterExample$)
                         \State Continue
                     \EndIf
@@ -194,7 +348,7 @@ $g_3$ and push this new obligation to \( F \).
                 \State $g_1 \gets$ Generalize($m_1$, $T_k$, $\neg lemma$)
                 \State $(r_2, i_2, n_2) \gets $ Reachable($n-k+1$, $n$, $g_1$)
                 \If{$r_2$}
-                    \State $(r_3, i_3, n_3) \gets $ Reachable($n+1$, $n_2 + k$, $g_1$)
+                    \State $(r_3, n_3) \gets $ Reachable($n+1$, $n_2 + k$, $g_1$)
                     \State $n_p \gets $ Min($n_p$, $n_3$)
                     \State $F \gets$ $F$ $\cup $ ($\neg counterExample$, $counterExample$)
                     \State $G \gets$ $G$ $\cup $ ($\neg counterExample$, $counterExample$)
@@ -212,44 +366,4 @@ $g_3$ and push this new obligation to \( F \).
     \caption{Push procedure}\label{alg:3}
 \end{figure}
 
-\newpage
-\section{PD-Kind procedure}
-
-\noindent The main PDKind procedure shown in Algorithm \ref{alg:4}
-checks if property \( P \) is invariant by
-iteratively calling the \( Push \) procedure to find a k-inductive
-strengthening of \( P \) for some $1 \leq k \leq n + 1$.
-PDKind iteratively strengthens the invariant until it becomes inductive.
-The strengthening
-\( G \) is k-inductive, and if $F == G$, then no more strengthening is required, and \( P \) is proven to be invariant
-,so we return \( SAFE \). If the \( Push \) procedure marks
-\( isInvalid \) as \( True \), then a counterexample has been found, proving that the property is not invariant and we
-return \( UNSAFE \). Otherwise, we update \( n \) and repeat the loop.
-
-
-\begin{figure}[H]
-\begin{mdframed}
-\begin{algorithmic}[1]
-\State \textbf{Input:} Initial states $I$, transition formula $T$, property $P$
-\State \textbf{Output:} Return UNSAFE if P is invalid or SAFE when there is no inductive strengthening left
-
-\State $n \gets 0$
-    \State $F \gets (P, \neg P)$
-    \While{true}
-        \State $k \gets n + 1$
-        \State $(F, G, n_p, isInvalid) \gets$ Push($F$, $n$, $k$)
-        \If{$isInvalid$}
-        \State \Return UNSAFE
-        \EndIf
-        \If{$F = G$}
-        \State \Return SAFE
-        \EndIf
-        \State $n \gets n_p$
-        \State $F \gets G$
-    \EndWhile
-
-\end{algorithmic}
-\end{mdframed}
-\caption{Main PD-Kind procedure}\label{alg:4}
-\end{figure}
 

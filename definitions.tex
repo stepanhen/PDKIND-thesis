@@ -27,39 +27,80 @@
 \end{definition}
 
 \section{Safety of Transition System}
-\noindent An essential property in the analysis of transition systems is safety. We consider a transition system to be safe if it never reaches an unsafe state during its execution. This property is crucial in verifying the correctness of programs and systems modeled using transition systems.
 
-\begin{definition}
-    \textbf{Safety Property:}
-    A property \( P \) is a \textbf{safety property} if it ensures that "nothing bad will ever happen" during the execution of the system. Formally, given a transition system \( (S, \mathcal{F}, \mathcal{T}, \mathcal{I}) \), a safety property \( P \) holds if for every reachable state \( s \in S \), the condition \( P(s) \) is satisfied.
-\end{definition}
 
-\begin{definition}
-    \textbf{Invariant \cite{7886665}:}
-    An \textbf{invariant} is a property that holds in all reachable states of a transition system. Formally, a property \( I \) is an invariant if, for a transition system \( (S, \mathcal{F}, \mathcal{T}, \mathcal{I}) \), every reachable state \( s \in S \) satisfies \( I(s) \).
-\end{definition}
+\noindent An essential concept in the analysis of transition systems is safety. We
+consider a transition system to be safe if it never reaches an
+unsafe state during its execution, where an unsafe state is one in which
+the desired property is violated. This notion of safety is crucial for
+verifying the correctness of programs and systems modeled by transition
+systems.
 
-\noindent Safety properties can often be expressed as invariants, as they require that the system never reaches an unsafe state.
+\begin{definition}\textbf{Safety Property:} A property $P$ is called a \textbf{safety
+property} if it ensures that “nothing bad will ever happen” during the
+execution of the system. Formally, given a transition system $(S, \mathcal{F},
+T, I)$ and a property $P$ (a state formula that can be evaluated on each
+state), we say $P$ is a safety property if for every reachable state $s \in S$,
+$P(s)$ is true. Equivalently, the system never reaches a state where $P(s)$ is
+false (such a state is considered unsafe). \end{definition}
 
-\vspace{\baselineskip}\noindent\textbf{Verifying Safety:} To verify whether a transition system satisfies a given safety property, we need to check whether all reachable states of the system satisfy the property. This can be done using different approaches:
+\begin{definition}\textbf{Invariant \cite{7886665}:} An \textbf{invariant} is a property
+that holds in all reachable states of a transition system. Formally, for a
+transition system $(S, \mathcal{F}, T, I)$, a state formula $I$ is an invariant if
+every reachable state $s \in S$ satisfies $I(s)$. \end{definition}
+
+\noindent Safety properties can often
+be expressed as invariants, since they require that the system never enters an
+unsafe state.
+
+\vspace{\baselineskip}
+\noindent\textbf{Verifying Safety.} To verify whether a transition system satisfies a
+given safety property $P$, we must check that all reachable states of the
+system satisfy $P$. There are several approaches to perform this verification:
+
 
 \begin{itemize}
-    \item \textbf{Explicit State Exploration:} Enumerate all reachable states and verify that each state satisfies $P$.
-    \item \textbf{Bounded Model Checking (BMC):} Unroll the transition system up to a given bound $k$ and check whether an unsafe state is reachable within $k$ steps.
-    \item \textbf{Inductive Invariant Checking:} Find an inductive invariant $Inv$ such that $\mathcal{I} \Rightarrow Inv$, $Inv \land \mathcal{T} \Rightarrow Inv'$, and $Inv \Rightarrow P$. If such an invariant exists, then $P$ holds for all reachable states.
+\item\textbf{Explicit State Exploration.} 
+
+This technique enumerates all reachable states of the system and checks whether
+the safety property holds in each of them. While simple and complete for finite
+systems, it quickly becomes infeasible due to the state explosion problem.
+Tools like SPIN\cite{588521} apply optimizations to mitigate this.
+
+\item\textbf{Bounded Model Checking (BMC).} 
+
+BMC checks whether a counterexample of length \( k \) exists by unrolling the
+transition system \( k \) steps and using a SAT/SMT solver to find violations.
+If no counterexample is found, the property holds up to depth \( k \), but this
+alone is not enough to prove the property.
+
+To prove unbounded safety, BMC is often combined with k-induction\ref{Def:kind}. This method verifies that the property holds for all states reachable within \( k \) steps and 
+that if the property holds for \( k \) steps, it holds for the \( k+1 \)-th as well.
+If both checks succeed, the property is proven for all executions.
+
+\item\textbf{Inductive Invariant Checking.} This method tries to find an invariant \( \mathit{Inv}(x) \) that holds initially, is preserved by transitions, and implies the safety property.
+
+If such an invariant is found, it proves the property. Algorithms like IC3\cite{6148908} automatically construct inductive invariants. Many verification tools encode these problems as Constrained Horn Clauses (CHCs) and solve them using SMT-based solvers.
 \end{itemize}
 
-\vspace{\baselineskip}\noindent\textbf{Example:} Consider a transition system modeling a counter with the following transitions:
+\noindent\textbf{Example:} Consider a transition system modeling a simple counter with state variable $x$ that starts at 0 and is incremented by 1 at each step. Formally, let the initial condition be $\mathcal{I}$ and the transition relation be $\mathcal{T}$. 
+
 \begin{align*}
     \mathcal{I}&: x = 0 \\
     \mathcal{T}&: x' = x + 1
 \end{align*}
+Now suppose we have a safety property $P$ stating that “the counter never exceeds 10,” i.e., $P(s)$ is $(x \le 10)$ for a state $s$. In this system, $P$ is actually violated after few steps: for instance, after 11 transitions, the counter reaches a state where $x = 11$, which is an unsafe state since it does not satisfy $P$. We can illustrate how each verification technique would handle this scenario.
 
-A safety property might state that the counter never exceeds a threshold, e.g., $x \leq 10$. The verification process would involve checking whether there exists a trace that leads to a state where $x > 10$. Which, in this situation, obviously exists.
+An explicit state exploration would enumerate states $x = 0, 1, 2, \dots$ and eventually encounter $x = 11$, identifying it as a counterexample that violates the safety property. 
 
-Ensuring safety is critical for system reliability, and we can use various formal verification techniques to determine whether a system satisfies its safety properties.
+Using BMC, if we set the bound $k = 10$, the model checker will not find any violation since no state with $x>10$ is reachable within 10 steps. Increasing the bound to $k = 11$ will produce a counterexample trace $s_0 \to s_1 \to \cdots \to s_{11}$ where $s_0$ has $x=0$ and $s_{11}$ has $x=11$, demonstrating that an unsafe state is reachable. This shows that BMC can detect the error when the bound is sufficiently large, but it cannot conclude overall safety without considering an unbounded number of steps.
 
-\section{Satisfiability Modulo Theories}
+With inductive invariant checking, we would attempt to prove the property $x \le 10$ by induction. In this case, no suitable inductive invariant exists to prove $x \le 10$ for all reachable states because the property itself is false for reachable state $x=11$. The inductive step fails. As a result, the method reports that it cannot prove the property, effectively uncovering the same counterexample at the point where the induction fails.
+
+Ensuring safety is critical for system reliability. By using the appropriate verification technique (or a combination of techniques), we can determine whether a system satisfies its safety properties or find counterexamples that demonstrate violations.
+
+
+\section{Satisfiability Modulo Theories\cite{BarFT-SMTLIB}}
 \noindent In logic and computer science, the Boolean satisfiability problem, also called SAT, is one of the most well-known problems. In 1971, it was proven to be the first NP-complete problem \cite{10.1145/800157.805047}. This greatly helped in the field of complexity theory by providing a tool for the classification of other computational problems. SAT is widely used, but there are cases where it is not possible to represent a problem using only the two Boolean values, true and false.
 
 This led to the generalization of SAT to more complex formulas, including real numbers, integers, or even lists and other data structures. In other words, an SMT instance arises as a generalization of a SAT instance, where Boolean variables are replaced with predicates of some theory. Examples of such theories are uninterpreted functions (UF), arrays, linear arithmetic (LA), or, more specifically, linear real arithmetic (LRA), which we will focus on in the rest of this work.
@@ -77,10 +118,36 @@ For example, consider a system where we need to check if there is an assignment 
 
 A traditional SAT solver would not be able to handle this problem, as it involves arithmetic over integers. However, using the linear arithmetic (LA) theory, an SMT solver can quickly solve this problem.
 
+
+To find a satisfying assignment, we solve the system:
+\begin{align*}
+x - y &= 3 \\
+2x + y &\ge 10
+\end{align*}
+From the first equation, we isolate \( x \):
+\[
+x = y + 3
+\]
+Substitute into the second inequality:
+\[
+2(y + 3) + y \ge 10 \Rightarrow 2y + 6 + y \ge 10 \Rightarrow 3y \ge 4 \Rightarrow y \ge \frac{4}{3}
+\]
+Then 
+\[ x = y + 3 \Rightarrow x \ge \frac{4}{3} + 3 = \frac{13}{3} \]
+So any pair \( (x, y) \) such that \( y \ge \frac{4}{3} \) and \( x = y + 3 \) is a solution. For example:
+\[
+y = 2,\quad x = 5
+\]
+is a valid model:
+\[
+2 \cdot 5 + 2 = 12 \ge 10,\quad 5 - 2 = 3
+\]
+
+
 While SAT solvers are only used for assigning values for Boolean variables, SMT solvers work with more complex theories, allowing them to handle constraints over data types beyond just true or false values. This extension makes SMT a powerful tool for solving problems that SAT solvers cannot address.
 
 \section{CHC Satisfiability}
-\noindent Constrained Horn Clauses (CHCs) is a fragment of First Order Logic
+\noindent Constrained Horn Clauses (CHCs)\cite{10.1007/978-3-031-13185-1_2} is a fragment of First Order Logic
 modulo constraints that capture many program verification problems as
 constraint solving.
 
@@ -114,10 +181,10 @@ For example, we consider a program with a loop:
 \begin{figure}[h]
     \begin{mdframed}
         \begin{lstlisting}
-int i = 10;
+int i $\rightarrow$ 10;
 
 while (x > 0) {
-    x = x - 1;
+    x $\rightarrow$ x - 1;
 }
 
 assert (x >= 0);
@@ -136,13 +203,13 @@ assert (x >= 0);
 \vspace{\baselineskip}
 \textbf{Transition clause:}
 \begin{equation}
-    x > 0 \land P(x) \land x' = x - 1 \implies P(x')
+     P(x) \land x > 0 \land x' = x - 1 \implies P(x')
     \label{chc:trans}
 \end{equation}
 \vspace{\baselineskip}
 \textbf{Safety clause:}
 \begin{equation}
-    x < 0 \land P(x) \implies False
+    P(x) \land x < 0  \implies False
     \label{chc:safe}
 \end{equation}
 
@@ -170,18 +237,21 @@ steps. We can introduce a compact representation of a loop in CHCs as follows.
         Inv(V) \land Bad(V) &\implies False
     \end{aligned}
 \end{equation}
-This representation allows us to analyze the loop's behavior over a finite number of iterations. To obtain a finite trace of the loop, we unroll it $k$ times, where $k$ is a finite number.
-\vspace{\baselineskip}
-\begin{equation}
-    Init(V) \land Tr(V, V^2) \dots \land Tr(V^{k-1}, V^k) \land Bad(V^k)
-\end{equation}
-This unrolled loop is known as a \textbf{Bounded Model Checking (BMC)} formula.
-By increasing $k$, we can evaluate more BMC formulas, which helps detect more system bugs. However, we must identify inductive invariants to prove that no bugs exist. In our work, we will leverage BMC formulas to discover
-these invariants.
+This representation allows us to analyze the loop's behavior over a finite number of iterations. 
+%To obtain a finite trace of the loop, we unroll it $k$ times, where $k$ is a finite number.
+%\vspace{\baselineskip}
+%\begin{equation}
+%    Init(V) \land Tr(V, V^2) \dots \land Tr(V^{k-1}, V^k) \land Bad(V^k)
+%\end{equation}
+%This unrolled loop is known as a \textbf{Bounded Model Checking (BMC)} formula.
+%By increasing $k$, we can evaluate more BMC formulas, which helps detect more system bugs. However, we must identify inductive invariants to prove that no bugs exist. In our work, we will leverage BMC formulas to discover
+%these invariants.
 
 
 \section{OpenSMT}
-\noindent OpenSMT\cite{10.1007/978-3-642-12002-2_12} is an open-source SMT solver developed by the Formal Verification and Security Lab based at the University of Lugano. It includes a parser for SMT-LIB\cite{BarFT-SMTLIB} language, a state-of-the-art SAT-Solver, and a clean interface for new theory solvers, currently supporting various logics such as QF\_UF, QF\_LIA, QF\_LRA, and more. Currently, there is a second version OpenSMT2\cite{10.1007/978-3-319-40970-2_35}, which supports interpolation for propositional logic, QF\_UF, QF\_LRA, QF\_LIA, and QF\_IDL.
+\noindent Golem uses OpenSMT\cite{10.1007/978-3-642-12002-2_12} as its underlying SMT solver to handle formulas that arise during CHC solving. OpenSMT supports several background theories and provides features like interpolation, which are necessary for some of the algorithms implemented in Golem. 
+
+is an open-source SMT solver developed by the Formal Verification and Security Lab based at the University of Lugano. It includes a parser for SMT-LIB\cite{BarFT-SMTLIB} language, a state-of-the-art SAT-Solver, and a clean interface for new theory solvers, currently supporting various logics such as QF\_UF, QF\_LIA, QF\_LRA, and more. Currently, there is a second version OpenSMT2\cite{10.1007/978-3-319-40970-2_35}, which supports interpolation for propositional logic, QF\_UF, QF\_LRA, QF\_LIA, and QF\_IDL.
 
 \section{Induction vs k-Induction}
 \noindent The PDKind algorithm is a combination of IC3 and k-induction.
@@ -203,7 +273,7 @@ If $\mathcal{F} = {P}$, we say that \( P \) is inductive,
 \vspace{\baselineskip}
 \cite{7886665} states that if P is inductive, it is also invariant. However, invariants are generally not inductive. To prove that \( P \) is an invariant, we need to find a set of formulas $\mathcal{F}$ that includes \( P \) and is itself inductive. This set is also called the strengthening of \( P \). If such a strengthening exists, then \( P \) must be an invariant.
 
-\begin{minipage}{\textwidth}
+\vspace{\baselineskip}
 \begin{definition}
 ($\mathcal{F}^k$-Induction\cite{7886665}):Let $\mathcal{F}$ be a set of state formulas, where $P \in \mathcal{F}$. Then \( P \) is $\mathcal{F}^k$-inductive if:
 
@@ -213,13 +283,12 @@ If $\mathcal{F} = {P}$, we say that \( P \) is inductive,
     \bigwedge_{i = 0}^{k - 1}(\mathcal{F}(\vec{x_i}) \land T(\vec{x_i}, \vec{x}_{i+1}))
     &\implies P(\vec{x_k}). \quad &\text{(k-cons)}
 \end{align*}
-If $\mathcal{F} = {P}$, we say that \( P \) is \( k \)-inductive,
+If $\mathcal{F} = {P}$, we say that \( P \) is \( k \)-inductive.
 \label{Def:kind}
 \end{definition}
-\end{minipage}
-If we substitute \( k \) with 1 in \( Definition \) \ref{Def:kind}, we can see that a property that is inductive is 1-inductive and also \( k \)-inductive for any \( k \). In the other direction, \cite{10.1007/978-3-319-08867-9_55} shows that if a property \( P \) is \( k \)-inductive and the logical theory allows quantifier elimination, then an inductive strengthening of \( P \) can be constructed by interpolation.
+If we substitute \( k \) with 1 in k-induction definition\ref{Def:kind}, we can see that a property that is inductive is 1-inductive and also \( k \)-inductive for any \( k \). In the other direction, \cite{7886665} shows that if a property \( P \) is \( k \)-inductive and the logical theory allows quantifier elimination, then an inductive strengthening of \( P \) can be constructed by interpolation.
 
-For theories that admit quantifier elimination, k-induction and induction have the same deductive power. However, \cite{Bjørner2015} shows that k-induction can yield more succinct strengthening. For other theories, such as \( Boolean logic \) or \( Linear arithmetic \), k-induction may be exponentially more powerful than induction due to weaker interpolation.
+For theories that admit quantifier elimination, k-induction and induction have the same deductive power. However, \cite{Bjørner2015} shows that k-induction can yield more succinct strengthening. For other theories, such as Boolean logic or Linear arithmetic, k-induction may be exponentially more powerful than induction due to weaker interpolation.
 
 \subsection*{Practical Effectiveness}
 \noindent \cite{7886665} shows that k-Induction is effective, especially when combined with algorithms like IC3.
