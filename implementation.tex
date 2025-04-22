@@ -1,9 +1,16 @@
 \chapter{Implementation}
-\noindent In this chapter, we will analyze the PDKind algorithm and describe
-how it was adapted to our implementation. We will go into the structure of the
-implementation, cover the individual components of the engine, and explain the
-decisions made during development. Finally, we will describe how the engine was
-integrated into the Golem solver.
+\noindent PDKind is a model checking algorithm designed to verify safety
+properties by combining k-induction with interpolation-based generalization. It
+separates the reasoning about reachability from the inductive argument, which
+makes it more flexible. We describe the algorithm itself in more detail in
+chapter \ref{PD-Kind}.
+
+In this chapter, we describe how the PDKind algorithm was implemented
+as a new engine in the Golem solver. We show how the algorithm was adapted to
+fit Golem’s structure, and we go through the key parts of the implementation,
+including the main data structures, core procedures like reachability and push,
+and the integration into Golem's engine system. We also explain how witness
+generation is handled.
 
 To keep the structure consistent with Golem's engine system, we placed our
 solution in the files \texttt{PDKind.cpp} and \texttt{PDKind.h}, without
