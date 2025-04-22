@@ -659,7 +659,7 @@ The method terminates when it either constructs a valid \( k \)-inductive
 invariant (and returns \( SAFE \)) or discovers a counterexample trace (and
 returns \( UNSAFE \)).
 
-\subsection{Validity Checking}
+\section{Validity Checking}
 
 \noindent In many cases, it is often required to provide a witness to the
 answer obtained from solving the CHC satisfiability problem. In software
@@ -680,7 +680,7 @@ In Golem \cite{blicha_golem_2023}, each engine provides a validity witness when
 the option \texttt{--print-witness} is used. To follow this structure, we
 implemented such functionality in the PDKind engine as well.
 
-\subsubsection*{UNSAT Witness} \label{UNSATWit}
+\subsection*{UNSAT Witness} \label{UNSATWit}
 
 \noindent First, we describe the implementation of the unsatisfiability witness
 in our engine. The goal is to generate counterexample paths during the CHC
@@ -720,7 +720,7 @@ the \texttt{TransitionSystemVerificationResult}, allowing Golem to generate a
 full counterexample trace using built-in utilities when the witness is
 requested.
 
-\subsubsection*{SAT Witness}
+\subsection*{SAT Witness}
 
 \noindent Now we describe the construction of a satisfiability witness in the
 PDKind engine. Here, the goal is to produce a valid inductive invariant that
