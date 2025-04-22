@@ -63,17 +63,18 @@ highlights the strength of its k-inductive reasoning, generalization, and
 interpolation in proving satisfiability, particularly in cases where the others
 time out.
 
-On UNSAT problems, PDKind is noticeably weaker. It solves fewer cases than both
-KIND and Spacer, often timing out where the others
-succeed. This suggests that while PDKind’s separation of reachability and
-induction gives it flexibility, it doesn’t always match the robustness of
-IC3-style in Spacer or the simpler approach in KIND.
+In fact, PDKind solves 97 benchmarks that KIND doesn’t, and 36 benchmarks that
+Spacer doesn’t. This further demonstrates its complementary value. While KIND
+has the highest overall success rate, these results show that PDKind is not
+just a weaker variant but brings in unique strength on many benchmarks. This
+makes a strong case for including PDKind as a core part of Golem’s multi-engine
+strategy.
 
-In fact, PDKind solves 97 benchmarks that KIND doesn’t, further
-demonstrating its complementary value. While KIND has the highest overall
-success rate, these results show that PDKind is not just a weaker variant but
-brings in unique strength on many benchmarks. This makes a strong case for
-including PDKind as a core part of Golem’s multi-engine strategy.
+On UNSAT problems, PDKind is noticeably weaker. It solves fewer cases than both
+KIND and Spacer, often timing out where the others succeed. This suggests that
+while PDKind’s separation of reachability and induction gives it flexibility,
+it doesn’t always match the robustness of IC3-style in Spacer or the simpler
+approach in KIND.
 
 \noindent Overall, PDKind is reliable on satisfiable problems and shows promise
 as a complete solver. While it still needs improvement on harder UNSAT cases,
